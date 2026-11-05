@@ -27,6 +27,7 @@ SPEC 02 ported the Home and explicitly deferred the About page. The prototype's 
 - Email body built with React Email (`@react-email/components`), with a plain-text fallback.
 - Anti-abuse: server-side validation (required, email format, max lengths) and a hidden honeypot field.
 - Nav: `About` link after `Hall of Fame` (desktop and mobile panel), active on `/about`.
+- Nav fix at ≤480px: the shared nav overflowed the viewport (hamburger button ended past the right edge, causing ~8px of horizontal scroll on every page). Tighten its gaps in `app/globals.css` so the 375px criterion can pass. Added during step 9 verification.
 - Scroll reveal on the divider and contact section, reusing `app/_components/home/reveal.tsx`.
 - About CSS ported from the reference `styles.css` into `app/globals.css`.
 - New env vars documented in `.env.example`.
@@ -37,7 +38,7 @@ SPEC 02 ported the Home and explicitly deferred the About page. The prototype's 
 - Rate limiting per IP and CAPTCHA.
 - Storing messages in a database or an admin inbox.
 - Verifying a custom sending domain in Resend (operational task, not code).
-- Changes to Home, Library, Detail, Player, Auth or Hall of Fame beyond the nav link.
+- Changes to Home, Library, Detail, Player, Auth or Hall of Fame beyond the nav link and the nav overflow fix.
 
 ## Data model
 
@@ -99,6 +100,7 @@ Email sent:
 6. Create `app/_components/about/highlight-icon.tsx` (HEART, BROWSER, PLANT SVGs from the template) and `app/_components/about/contact-form.tsx` (client, `useActionState(sendContactMessage, { status: "idle" })`, `useFormStatus`/`isPending` for the pending label, shake triggered when state becomes `invalid`, success/error terminals, `SEND ANOTHER MESSAGE` and `RETRY` reset to the form).
 7. Create `app/about/page.tsx` (server page, `metadata` title `About · Arcade Vault`) rendering hero, highlights, divider, contact intro and `<ContactForm />`, plus `<Reveal />`.
 8. Add the `About` link to `app/_components/nav.tsx` (desktop + mobile, `aboutActive = pathname.startsWith("/about")`).
+8b. Fix the nav overflow at ≤480px in `app/globals.css` (smaller `gap` in `.av-nav`, no `margin-left` on `.auth-btn`); confirm `scrollWidth === clientWidth` at 375px on `/about`, `/login` and `/hall-of-fame`.
 9. Run `npm run lint` and `npm run build`; verify acceptance criteria in the browser at desktop and 375px, and send one real test email with a valid key.
 
 Before writing code, read `node_modules/next/dist/docs/` (Server Actions / forms, `useActionState`, Cache Components implications for a page with a form, environment variables). Use the `/frontend-design` skill for UI work.
