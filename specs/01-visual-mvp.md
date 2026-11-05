@@ -1,6 +1,6 @@
 # SPEC 01 — Visual MVP of the Arcade Vault screens
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** —
 > **Date:** 2026-11-04
 > **Objective:** Port the five screens of the `references/templates/` prototype (Library, Game Detail, Player, Auth, Hall of Fame) to Next.js App Router routes, in English, fed by mock data, without implementing any real game.
@@ -103,29 +103,29 @@ Before writing route code, read the relevant guides in `node_modules/next/dist/d
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `/` shows the hero and 8 game cards.
-- [ ] Typing in the search filters cards by title; a query with no matches shows the "NO RESULTS" empty state.
-- [ ] Clicking a category chip shows only games of that category; `ALL` shows all 8.
-- [ ] Clicking a card or its PLAY button navigates to `/games/[id]`.
-- [ ] `/games/[id]` shows the game title, description, stat strip and a 10-row leaderboard.
-- [ ] `/games/unknown-id` renders the 404 page.
-- [ ] PLAY NOW navigates to `/games/[id]/play`; the score increases on its own.
-- [ ] PAUSE stops the score and shows the "PAUSED" overlay; RESUME continues it.
-- [ ] END opens the Game Over modal with the final score.
-- [ ] SAVE SCORE replaces the input with the "SCORE SAVED" toast and writes nothing to storage.
-- [ ] PLAY AGAIN resets score to 0, lives to 3 and level to 01.
-- [ ] Submitting `/login` with a username redirects to `/` and the nav shows that username uppercased.
-- [ ] The Create Account tab shows the email field; the Sign In tab hides it.
-- [ ] PLAY AS GUEST redirects to `/` with no session.
-- [ ] Clicking the username in the nav signs out and shows SIGN IN again.
-- [ ] `/hall-of-fame` shows one tab per game; switching tabs changes the podium and the table.
-- [ ] With a session, the Hall of Fame shows the "YOUR BEST" row; without a session it does not.
-- [ ] Reloading the page after signing in shows SIGN IN again (session is in memory only).
-- [ ] The nav marks the active link (Library for `/`, `/games/*`; Hall of Fame for `/hall-of-fame`).
-- [ ] At 375px width the nav links are replaced by the hamburger, which opens the side panel.
-- [ ] No visible text in the UI is in Spanish.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `/` shows the hero and 8 game cards.
+- [x] Typing in the search filters cards by title; a query with no matches shows the "NO RESULTS" empty state.
+- [x] Clicking a category chip shows only games of that category; `ALL` shows all 8.
+- [x] Clicking a card or its PLAY button navigates to `/games/[id]`.
+- [x] `/games/[id]` shows the game title, description, stat strip and a 10-row leaderboard.
+- [x] `/games/unknown-id` renders the 404 page.
+- [x] PLAY NOW navigates to `/games/[id]/play`; the score increases on its own.
+- [x] PAUSE stops the score and shows the "PAUSED" overlay; RESUME continues it.
+- [x] END opens the Game Over modal with the final score.
+- [x] SAVE SCORE replaces the input with the "SCORE SAVED" toast and writes nothing to storage.
+- [x] PLAY AGAIN resets score to 0, lives to 3 and level to 01.
+- [x] Submitting `/login` with a username redirects to `/` and the nav shows that username uppercased.
+- [x] The Create Account tab shows the email field; the Sign In tab hides it.
+- [x] PLAY AS GUEST redirects to `/` with no session.
+- [x] Clicking the username in the nav signs out and shows SIGN IN again.
+- [x] `/hall-of-fame` shows one tab per game; switching tabs changes the podium and the table.
+- [x] With a session, the Hall of Fame shows the "YOUR BEST" row; without a session it does not.
+- [x] Reloading the page after signing in shows SIGN IN again (session is in memory only).
+- [x] The nav marks the active link (Library for `/`, `/games/*`; Hall of Fame for `/hall-of-fame`).
+- [x] At 375px width the nav links are replaced by the hamburger, which opens the side panel.
+- [x] No visible text in the UI is in Spanish.
 
 ## Decisions
 
