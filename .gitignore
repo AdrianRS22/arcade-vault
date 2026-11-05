@@ -40,5 +40,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# playwright mcp output
+# playwright
 .playwright-mcp/
+.playwright-screenshots/
