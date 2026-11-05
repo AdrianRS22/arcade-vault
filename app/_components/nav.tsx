@@ -83,7 +83,7 @@ export function Nav() {
           </Link>
         )}
         <div className="flex-1"></div>
-        <div className="pixel text-[9px] tracking-[0.16em] text-[var(--ink-faint)]">
+        <div className="pixel text-[9px] tracking-[0.16em] text-ink-faint">
           CREDITS · 03
         </div>
       </aside>
