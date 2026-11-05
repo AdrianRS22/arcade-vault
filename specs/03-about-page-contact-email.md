@@ -1,6 +1,6 @@
 # SPEC 03 — About page and contact email
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01, SPEC 02
 > **Date:** 2026-11-05
 > **Objective:** Add an About page at `/about` ported from `references/templates/home-about/home-about/about.jsx` (in English) whose contact form sends an email to the team through Resend using a Server Action.
@@ -107,24 +107,24 @@ Before writing code, read `node_modules/next/dist/docs/` (Server Actions / forms
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `/about` shows, in order: hero (kicker, title, mission), 3 highlights with icons, divider with 24 pixels, contact intro with 3 tips, and the form.
-- [ ] Layout and styles match `about.jsx` + `styles.css` (same classes, colors, grid 1fr/1.2fr on desktop).
-- [ ] No visible text on `/about` is in Spanish.
-- [ ] Nav shows Home, Library, Hall of Fame, About (desktop and mobile); About is active on `/about`.
-- [ ] Submitting with any empty field shakes the form and shows the error under that field; no email is sent.
-- [ ] Submitting `not-an-email` in EMAIL shows an email error under the field.
-- [ ] A message over 2000 chars is rejected with an error under MESSAGE.
-- [ ] Typed values are kept after a validation error.
-- [ ] While sending, the button is disabled and reads `TRANSMITTING…`.
-- [ ] With valid env vars, a valid submit shows the success terminal with the name in uppercase, and the team inbox receives an email with subject `[Arcade Vault] New message from {name}`, the three fields in the body, and reply-to set to the user's email.
-- [ ] `SEND ANOTHER MESSAGE` returns to an empty form.
-- [ ] With `RESEND_API_KEY` missing or invalid, a valid submit shows the error terminal; `RETRY` returns to the form with values kept; the server log shows the cause; the API key never appears in client code or responses.
-- [ ] Filling the honeypot field (via devtools) shows success and sends no email.
-- [ ] Divider and contact fade in on scroll; with reduced motion emulated they are visible and pixels/shake don't animate.
-- [ ] At 375px there is no horizontal scroll; highlights and contact grid collapse to one column.
-- [ ] `.env.example` lists the 3 vars and no real secret is committed.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `/about` shows, in order: hero (kicker, title, mission), 3 highlights with icons, divider with 24 pixels, contact intro with 3 tips, and the form.
+- [x] Layout and styles match `about.jsx` + `styles.css` (same classes, colors, grid 1fr/1.2fr on desktop).
+- [x] No visible text on `/about` is in Spanish.
+- [x] Nav shows Home, Library, Hall of Fame, About (desktop and mobile); About is active on `/about`.
+- [x] Submitting with any empty field shakes the form and shows the error under that field; no email is sent.
+- [x] Submitting `not-an-email` in EMAIL shows an email error under the field.
+- [x] A message over 2000 chars is rejected with an error under MESSAGE.
+- [x] Typed values are kept after a validation error.
+- [x] While sending, the button is disabled and reads `TRANSMITTING…`.
+- [x] With valid env vars, a valid submit shows the success terminal with the name in uppercase, and the team inbox receives an email with subject `[Arcade Vault] New message from {name}`, the three fields in the body, and reply-to set to the user's email.
+- [x] `SEND ANOTHER MESSAGE` returns to an empty form.
+- [x] With `RESEND_API_KEY` missing or invalid, a valid submit shows the error terminal; `RETRY` returns to the form with values kept; the server log shows the cause; the API key never appears in client code or responses.
+- [x] Filling the honeypot field (via devtools) shows success and sends no email.
+- [x] Divider and contact fade in on scroll; with reduced motion emulated they are visible and pixels/shake don't animate.
+- [x] At 375px there is no horizontal scroll; highlights and contact grid collapse to one column.
+- [x] `.env.example` lists the 3 vars and no real secret is committed.
 
 ## Decisions
 
