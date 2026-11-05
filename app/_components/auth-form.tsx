@@ -107,7 +107,7 @@ export function AuthForm() {
           </button>
         </div>
 
-        <div className="mt-[18px] text-center text-[11px] tracking-widest text-ink-faint">
+        <div className="mt-4.5 text-center text-[11px] tracking-widest text-ink-faint">
           BY ENTERING YOU ACCEPT THE ARCADE HALL TERMS
         </div>
       </div>
