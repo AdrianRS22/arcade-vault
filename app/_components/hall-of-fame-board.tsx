@@ -57,7 +57,7 @@ export function HallOfFameBoard({ games, leaderboards, playerBests }: Props) {
         )}
         {first && (
           <div className="podium-slot gold">
-            <div className="pixel text-[9px] tracking-[0.18em] text-(--gold)">
+            <div className="pixel text-[9px] tracking-[0.18em] text-gold">
               CHAMPION
             </div>
             <div className="rank-num mt-1 text-[36px]">01</div>
