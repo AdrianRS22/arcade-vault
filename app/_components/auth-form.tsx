@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useSession } from "./session-provider";
 
-export function AuthForm() {
+export type AuthTab = "in" | "up";
+
+export function AuthForm({ initialTab = "in" }: { initialTab?: AuthTab }) {
   const router = useRouter();
   const { signIn, signOut } = useSession();
-  const [tab, setTab] = useState<"in" | "up">("in");
+  const [tab, setTab] = useState<AuthTab>(initialTab);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
