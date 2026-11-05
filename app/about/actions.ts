@@ -1,5 +1,6 @@
 "use server";
 
+import { render } from "@react-email/components";
 import { createElement } from "react";
 import { Resend } from "resend";
 
@@ -54,12 +55,15 @@ export async function sendContactMessage(
 
   try {
     const resend = new Resend(apiKey);
+    // Render here instead of passing `react:` to Resend: its dynamic import of
+    // @react-email/render does not survive the Next.js server bundle.
+    const html = await render(createElement(ContactEmail, values));
     const { error } = await resend.emails.send({
       from,
       to,
       replyTo: values.email,
       subject: `[Arcade Vault] New message from ${values.name}`,
-      react: createElement(ContactEmail, values),
+      html,
       text: [
         `New message from ${values.name}`,
         "",
