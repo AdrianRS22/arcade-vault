@@ -49,7 +49,7 @@ export function LibraryBrowser({ games }: { games: Game[] }) {
         ))}
         {filtered.length === 0 && (
           <div className="col-span-full p-20 text-center text-ink-faint">
-            <div className="pixel mb-3 text-[14px] text-(--magenta)">
+            <div className="pixel mb-3 text-[14px] text-magenta">
               NO RESULTS
             </div>
             <div>Try another search or category.</div>
