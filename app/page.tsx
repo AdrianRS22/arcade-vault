@@ -125,10 +125,10 @@ export default async function Home() {
               ✦ CREATE ACCOUNT
             </Link>
           </div>
-          <div className="hero-scroll" aria-hidden="true">
-            <span>SCROLL</span>
-            <span className="arrow">▼</span>
-          </div>
+        </div>
+        <div className="hero-scroll" aria-hidden="true">
+          <span>SCROLL</span>
+          <span className="arrow">▼</span>
         </div>
       </section>
 
