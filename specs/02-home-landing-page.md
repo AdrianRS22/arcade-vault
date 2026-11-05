@@ -1,6 +1,6 @@
 # SPEC 02 — Home landing page
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01
 > **Date:** 2026-11-04
 > **Objective:** Add a marketing Home page at `/` ported from `references/templates/home-about/` (in English, fed by mock data) and move the Library from `/` to `/games`.
@@ -86,24 +86,24 @@ Before writing route code, read `node_modules/next/dist/docs/` (Cache Components
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `/` shows the hero with the silhouettes, title, subtitle and both CTAs.
-- [ ] `/` shows, in order, the sections WHY ARCADE VAULT?, GAMES AVAILABLE NOW, the stats band, LIVE ACTIVITY, PRICING and READY TO PLAY?.
-- [ ] The games rail shows exactly 6 mini cards; clicking one navigates to `/games/[id]`.
-- [ ] The stats band shows `8` as the game count.
-- [ ] The ticker shows 7 rows with player, game title, score and time; the top list shows 5 rows with ranks #01–#05.
-- [ ] `EXPLORE GAMES`, `SEE ALL GAMES` and `INSERT COIN` navigate to `/games`.
-- [ ] `CREATE ACCOUNT` and `START FREE` navigate to `/login?mode=create` and the Create Account tab (with email field) is selected.
-- [ ] `/login` without params still opens on the Sign In tab.
-- [ ] `HALL OF FAME →` in Live Activity navigates to `/hall-of-fame`.
-- [ ] `/games` shows the Library (hero, search, chips, 8 cards) with the SPEC 01 behavior.
-- [ ] Nav shows Home, Library and Hall of Fame; Home is active on `/`, Library on `/games` and `/games/*`.
-- [ ] Game Detail Back, Player Back to Vault and the Hall of Fame button navigate to `/games`.
-- [ ] Sections fade in when scrolled into view; with reduced motion emulated they are visible without animation.
-- [ ] At 375px there is no horizontal scroll and grids collapse (features, rail, stats, activity, pricing).
-- [ ] No visible text on the Home is in Spanish and no real-world game brand names appear.
-- [ ] No About link or About page exists.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `/` shows the hero with the silhouettes, title, subtitle and both CTAs.
+- [x] `/` shows, in order, the sections WHY ARCADE VAULT?, GAMES AVAILABLE NOW, the stats band, LIVE ACTIVITY, PRICING and READY TO PLAY?.
+- [x] The games rail shows exactly 6 mini cards; clicking one navigates to `/games/[id]`.
+- [x] The stats band shows `8` as the game count.
+- [x] The ticker shows 7 rows with player, game title, score and time; the top list shows 5 rows with ranks #01–#05.
+- [x] `EXPLORE GAMES`, `SEE ALL GAMES` and `INSERT COIN` navigate to `/games`.
+- [x] `CREATE ACCOUNT` and `START FREE` navigate to `/login?mode=create` and the Create Account tab (with email field) is selected.
+- [x] `/login` without params still opens on the Sign In tab.
+- [x] `HALL OF FAME →` in Live Activity navigates to `/hall-of-fame`.
+- [x] `/games` shows the Library (hero, search, chips, 8 cards) with the SPEC 01 behavior.
+- [x] Nav shows Home, Library and Hall of Fame; Home is active on `/`, Library on `/games` and `/games/*`.
+- [x] Game Detail Back, Player Back to Vault and the Hall of Fame button navigate to `/games`.
+- [x] Sections fade in when scrolled into view; with reduced motion emulated they are visible without animation.
+- [x] At 375px there is no horizontal scroll and grids collapse (features, rail, stats, activity, pricing).
+- [x] No visible text on the Home is in Spanish and no real-world game brand names appear.
+- [x] No About link or About page exists.
 
 ## Decisions
 
