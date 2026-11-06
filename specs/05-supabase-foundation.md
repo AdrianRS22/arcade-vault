@@ -17,6 +17,7 @@ The Supabase project is created and the MCP is configured, but the app has no cl
 - `supabase init` → `supabase/config.toml` and an empty `supabase/migrations/` (with `.gitkeep`), linked to project `ekupeshkawfihlnpmpvi`.
 - `lib/supabase/server.ts`: `createClient()` for Server Components, Server Actions and Route Handlers (`createServerClient` + `await cookies()`).
 - `lib/supabase/client.ts`: `createClient()` for Client Components (`createBrowserClient`).
+- `lib/supabase/env.ts`: reads `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` once (static `process.env.*` references so Next inlines them in the browser) and throws a clear error if one is missing. Shared by both clients.
 - `types/supabase.ts`: generated `Database` type, committed; both clients typed with it.
 - npm scripts `db:types` (regenerate types) and `db:push` (apply migrations).
 - `app/api/health/route.ts`: `GET` that checks Supabase from the server.
@@ -75,7 +76,7 @@ npm scripts:
 2. Add the two `NEXT_PUBLIC_SUPABASE_*` vars to `.env.example` (empty, with comments) and real values to `.env.local` (URL and publishable key from the Supabase MCP / dashboard). Confirm `.env*.local` stays ignored.
 3. Run `npx supabase init` and `npx supabase link --project-ref ekupeshkawfihlnpmpvi`. Add `supabase/migrations/.gitkeep`. Make sure `supabase/.temp/` and `supabase/.branches/` are git-ignored.
 4. Add the `db:types` and `db:push` scripts and generate `types/supabase.ts`.
-5. Create `lib/supabase/server.ts` and `lib/supabase/client.ts`, typed with `Database`. Read env vars once and throw a clear error if one is missing.
+5. Create `lib/supabase/env.ts` (reads the env vars once and throws a clear error if one is missing), then `lib/supabase/server.ts` and `lib/supabase/client.ts`, typed with `Database` and using the values from `env.ts`.
 6. Create `app/api/health/route.ts`. It runs dynamically (check `node_modules/next/dist/docs/` for Route Handlers under `cacheComponents`, e.g. `await connection()`), calls `${NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health` with the publishable key as `apikey`, measures latency, returns 200 / 503 with the shape above and logs the real cause server-side. Manual check: `curl localhost:3000/api/health`.
 7. Add the "Supabase" section to `README.md`.
 
@@ -89,7 +90,7 @@ Before writing code, read `node_modules/next/dist/docs/` (Route Handlers, `cooki
 - [ ] With a wrong `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `GET /api/health` returns 503 with `ok: false` and the server log shows the cause.
 - [ ] `/api/health` is not cached: two calls return different `latencyMs` or are both computed at request time (no prerendered response in the build output).
 - [ ] `npm run db:types` regenerates `types/supabase.ts` with no diff on a clean tree.
-- [ ] `lib/supabase/server.ts` and `lib/supabase/client.ts` return clients typed with `Database`.
+- [ ] `lib/supabase/server.ts` and `lib/supabase/client.ts` return clients typed with `Database`; a missing env var fails with a clear error from `lib/supabase/env.ts`.
 - [ ] `supabase/config.toml` and `supabase/migrations/` exist in the repo; `supabase/.temp/` is not committed.
 - [ ] `.env.example` lists `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` with empty values; no real key is committed.
 - [ ] No secret / service-role key appears anywhere in the code or env files.
