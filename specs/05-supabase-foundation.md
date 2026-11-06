@@ -58,16 +58,16 @@ type HealthResponse =
   | { ok: false; error: string }; // 503, generic message, no secrets
 ```
 
-| Var                                    | Example                                    | Purpose                                         |
-| -------------------------------------- | ------------------------------------------ | ----------------------------------------------- |
-| `NEXT_PUBLIC_SUPABASE_URL`             | `https://ekupeshkawfihlnpmpvi.supabase.co` | Project API URL                                 |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_xxx`                       | Public key, safe in the browser once RLS exists |
-| `SUPABASE_DB_PASSWORD`                 | (already exists)                           | Used by `supabase link` / `db push` only        |
+| Var                                    | Example                                    | Purpose                                           |
+| -------------------------------------- | ------------------------------------------ | ------------------------------------------------- |
+| `NEXT_PUBLIC_SUPABASE_URL`             | `https://ekupeshkawfihlnpmpvi.supabase.co` | Project API URL                                   |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | `sb_publishable_xxx`                       | Public key, safe in the browser once RLS exists   |
+| `SUPABASE_ACCESS_TOKEN`                | (already exists)                           | Supabase CLI only: `link`, `db push`, `gen types` |
 
 npm scripts:
 
-- `db:types`: `supabase gen types typescript --linked > types/supabase.ts`
-- `db:push`: `supabase db push`
+- `db:types`: `supabase gen types typescript --remote > types/supabase.ts`
+- `db:push`: `supabase db push --remote`
 
 ## Implementation plan
 
@@ -121,7 +121,7 @@ Before writing code, read `node_modules/next/dist/docs/` (Route Handlers, `cooki
 | `cacheComponents` prerenders or caches `/api/health`                                         | Read the Route Handler docs in `node_modules/next/dist/docs/`; force request-time rendering; acceptance criterion checks it. |
 | `@supabase/ssr` cookie API differs from older examples (`get/set/remove` vs `getAll/setAll`) | Follow the current guide; use `getAll`/`setAll`.                                                                             |
 | `cookies()` called in a cached scope breaks the build                                        | `lib/supabase/server.ts` is only used in dynamic contexts; documented in the file.                                           |
-| `supabase link` needs the DB password                                                        | `SUPABASE_DB_PASSWORD` already in `.env.local`; never committed.                                                             |
+| `supabase link` / `db push` need a personal access token                                     | `SUPABASE_ACCESS_TOKEN` in `.env.local`; never committed.                                                                    |
 | Publishable key is public and there are no RLS policies yet                                  | No tables exist; every future table spec must enable RLS.                                                                    |
 | Generated types change between CLI versions                                                  | `supabase` CLI pinned as devDependency.                                                                                      |
 
