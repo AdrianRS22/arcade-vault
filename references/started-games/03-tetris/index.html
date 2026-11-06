@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Claude Tetris</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrapper">
+    <div class="game-header">
+    <h1 class="game-title" aria-label="Claude Tetris"><span class="c0">C</span><span class="c1">L</span><span class="c2">A</span><span class="c3">U</span><span class="c4">D</span><span class="c5">E</span> <span class="c6">T</span><span class="c0">E</span><span class="c1">T</span><span class="c2">R</span><span class="c3">I</span><span class="c4">S</span></h1>
+    <button id="theme-toggle" type="button" role="switch" aria-checked="false" aria-label="Modo claro" title="Cambiar tema" tabindex="-1">🌙</button>
+    <select id="skin-select" aria-label="Skin" title="Cambiar skin">
+      <option value="retro">Retro</option>
+      <option value="neon">Neon</option>
+      <option value="pastel">Pastel</option>
+      <option value="pixel">Pixel art</option>
+    </select>
+    </div>
+    <div class="game-container">
+      <canvas id="board" width="300" height="600"></canvas>
+
+      <aside class="panel">
+        <div class="panel-section">
+          <span class="label">SCORE</span>
+          <span class="value" id="score">0</span>
+        </div>
+        <div class="panel-section">
+          <span class="label">LINES</span>
+          <span class="value" id="lines">0</span>
+        </div>
+        <div class="panel-section">
+          <span class="label">LEVEL</span>
+          <span class="value" id="level">1</span>
+        </div>
+
+        <div class="panel-section">
+          <span class="label">NEXT</span>
+          <canvas id="next-canvas" width="120" height="120"></canvas>
+        </div>
+
+        <div class="panel-section controls">
+          <span class="label">CONTROLS</span>
+          <ul>
+            <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+            <li><kbd>↑</kbd><kbd>X</kbd> rotar</li>
+            <li><kbd>↓</kbd> bajar</li>
+            <li><kbd>Space</kbd> caída</li>
+            <li><kbd>P</kbd><kbd>Esc</kbd> pausa</li>
+            <li>Cada 5 líneas: 💣⚡🎨⬇️❄️</li>
+          </ul>
+        </div>
+      </aside>
+
+      <div id="overlay" class="overlay hidden">
+        <div class="overlay-box">
+          <p id="overlay-title">GAME OVER</p>
+          <p id="overlay-score"></p>
+          <p id="record-msg" class="hidden"></p>
+          <form id="record-form" class="hidden" autocomplete="off">
+            <input id="player-name" type="text" maxlength="12" placeholder="Tu nombre" aria-label="Nombre del jugador" />
+            <button type="submit" id="save-record">Guardar</button>
+          </form>
+          <section id="records">
+            <span class="label">RECORDS</span>
+            <ol id="records-list"></ol>
+            <p id="records-stats"></p>
+            <button id="reset-records" type="button">Borrar records</button>
+          </section>
+          <button id="restart-btn">Jugar</button>
+        </div>
+      </div>
+
+      <div id="pause-menu" class="overlay hidden" role="dialog" aria-label="Pausa">
+        <div class="overlay-box menu-box">
+          <p class="menu-title">PAUSA</p>
+          <div id="pause-main" class="menu-buttons">
+            <button type="button" data-action="resume">Reanudar</button>
+            <button type="button" data-action="restart">Reiniciar</button>
+            <button type="button" data-action="controls">Ver controles</button>
+            <label class="menu-level">Nivel inicial
+              <select id="start-level">
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                <option value="10">10</option>
+              </select>
+            </label>
+            <small class="menu-hint">Se aplica en la próxima partida</small>
+          </div>
+          <div id="pause-controls" class="menu-buttons hidden">
+            <ul class="menu-keys">
+              <li><kbd>←</kbd><kbd>→</kbd> mover</li>
+              <li><kbd>↑</kbd><kbd>X</kbd> rotar</li>
+              <li><kbd>↓</kbd> bajar</li>
+              <li><kbd>Space</kbd> caída</li>
+              <li><kbd>P</kbd><kbd>Esc</kbd> pausa</li>
+            </ul>
+            <button type="button" data-action="back">Volver</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
