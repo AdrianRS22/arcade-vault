@@ -1,6 +1,6 @@
 # SPEC 05 — Supabase foundation
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01
 > **Date:** 2026-11-06
 > **Objective:** Connect the Next.js app to the existing Supabase project with typed server and browser clients, a versioned migrations folder and a `/api/health` endpoint that proves the connection, without changing any feature yet.
@@ -84,17 +84,17 @@ Before writing code, read `node_modules/next/dist/docs/` (Route Handlers, `cooki
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `GET /api/health` with valid env vars returns 200 and `{ "ok": true, "latencyMs": <number> }`.
-- [ ] With a wrong `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `GET /api/health` returns 503 with `ok: false` and the server log shows the cause.
-- [ ] `/api/health` is not cached: two calls return different `latencyMs` or are both computed at request time (no prerendered response in the build output).
-- [ ] `npm run db:types` regenerates `types/supabase.ts` with no diff on a clean tree.
-- [ ] `lib/supabase/server.ts` and `lib/supabase/client.ts` return clients typed with `Database`; a missing env var fails with a clear error from `lib/supabase/env.ts`.
-- [ ] `supabase/config.toml` and `supabase/migrations/` exist in the repo; `supabase/.temp/` is not committed.
-- [ ] `.env.example` lists `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` with empty values; no real key is committed.
-- [ ] No secret / service-role key appears anywhere in the code or env files.
-- [ ] Every existing route (`/`, `/games`, `/games/block-buster`, `/hall-of-fame`, `/login`, `/about`) looks and behaves the same as before.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `GET /api/health` with valid env vars returns 200 and `{ "ok": true, "latencyMs": <number> }`.
+- [x] With a wrong `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `GET /api/health` returns 503 with `ok: false` and the server log shows the cause.
+- [x] `/api/health` is not cached: two calls return different `latencyMs` or are both computed at request time (no prerendered response in the build output).
+- [x] `npm run db:types` regenerates `types/supabase.ts` with no diff on a clean tree.
+- [x] `lib/supabase/server.ts` and `lib/supabase/client.ts` return clients typed with `Database`; a missing env var fails with a clear error from `lib/supabase/env.ts`.
+- [x] `supabase/config.toml` and `supabase/migrations/` exist in the repo; `supabase/.temp/` is not committed.
+- [x] `.env.example` lists `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` with empty values; no real key is committed.
+- [x] No secret / service-role key appears anywhere in the code or env files.
+- [x] Every existing route (`/`, `/games`, `/games/block-buster`, `/hall-of-fame`, `/login`, `/about`) looks and behaves the same as before.
 
 ## Decisions
 
