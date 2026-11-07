@@ -79,7 +79,7 @@ const ROWS: Record<string, Row[]> = {
     ["GLITCHA", 27285, "12/06/2026"],
     ["ATARI_KID", 24510, "07/02/2026"],
   ],
-  rocks: [
+  asteroids: [
     ["GLITCHA", 41200, "16/07/2026"],
     ["M00NRYU", 39560, "01/03/2026"],
     ["ARKADYA", 37985, "23/05/2026"],
