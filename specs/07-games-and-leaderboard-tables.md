@@ -1,6 +1,6 @@
 # SPEC 07 — Games and leaderboard tables
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05, SPEC 06
 > **Date:** 2026-11-07
 > **Objective:** Replace every mock in `app/data/` with Supabase tables `games` (holding only Asteroids) and `scores`, so the catalog, leaderboards and home activity show only real data and SAVE SCORE persists the score and shows its rank.
@@ -131,36 +131,36 @@ export async function saveScore(
 7. Remove the fake arena from `app/_components/game-player.tsx`: the random score interval, the `.game-arena` markup, the `isReal` flag and its branches. The player always mounts `AsteroidsCanvas`, and the Power-up stat, the controls legend and the single pause text are always shown. The `realLevel` state becomes `level`, because the score-derived level for fake games is gone. Check: `/games/asteroids/play` plays exactly as in SPEC 06.
 8. Create `app/games/[id]/play/actions.ts` with `saveScore`. It normalizes the player (trim, uppercase, max 10), validates it against `^[A-Z0-9_]{1,10}$` and the score range, calls `submit_score` with the server client, invalidates the `games` and `scores` tags with `updateTag` and returns the result shape. It logs the real error server-side and returns a generic message. Validation errors tell the player what to fix ("Use 1 to 10 letters, numbers or underscores for your initials."); every other failure says "Could not save your score. Try again." Check, without writing anything: `submit_score` called with the publishable key rejects an unknown game, the players `ab` and `TOO_LONG_NAME1`, and the scores `-1` and `10000000`, each with HTTP 400.
 9. Wire the GAME OVER modal: SAVE SCORE calls `saveScore` with the idle, saving, saved-with-rank and error-retry states, plus a link to `/hall-of-fame`. Use the `/frontend-design` skill for the new states.
-10. Hall of Fame: `app/_components/hall-of-fame-board.tsx` (which lost its "YOUR BEST" row in step 5) calls a Server Action `getMyBests(user.name)` when a user is signed in and renders "YOUR BEST IN …" from it, hidden when there is no entry. Use the `/frontend-design` skill for the empty states from steps 5, 6 and 10.
+10. Hall of Fame: create `app/hall-of-fame/actions.ts` with the Server Action `getMyBests(player)`. It normalizes and validates the name like `saveScore`, calls the uncached `getPlayerBests`, and returns `{}` (logging the cause server-side) when the name is invalid or the query fails. `app/_components/hall-of-fame-board.tsx` (which lost its "YOUR BEST" row in step 5) calls it from an effect when a user is signed in, keeps the result tagged with the player it was loaded for, and renders "YOUR BEST IN …" from it, hidden when there is no entry. There is no loading state: the row simply appears below the table when the data arrives. Use the `/frontend-design` skill for the empty states from steps 5, 6 and 10.
 
 Before writing code, read `node_modules/next/dist/docs/` for `'use cache'`, `cacheTag`, `cacheLife`, `updateTag` / `revalidateTag`, Server Actions and `generateStaticParams` under `cacheComponents`.
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `supabase/migrations/` contains the schema and seed migrations, and `npm run db:types` shows no diff on a clean tree.
-- [ ] Right after the seed, `games` has exactly 1 row (`asteroids`) and `scores` has 0 rows.
-- [ ] `app/data/*.ts` contain no hard-coded game, score or activity arrays.
-- [ ] `app/_components/game-player.tsx` contains no random score ticker and no `.game-arena` markup.
-- [ ] With the publishable key, `insert`, `update` and `delete` on `games` and `scores` are rejected.
-- [ ] Supabase security advisors report no issue on `games`, `scores` and the three views. The only warnings on `submit_score` are the expected `SECURITY DEFINER` ones (`anon` and `authenticated` can execute it), which stay until the Auth spec.
-- [ ] `submit_score` rejects an unknown game id, a player like `ab` or `TOO_LONG_NAME1`, and a score of `-1` or `10000000`.
-- [ ] `/games` shows only ASTEROIDS. Selecting ARCADE, PUZZLE or VERSUS shows the existing empty state.
-- [ ] `/games/block-buster`, `/games/drop`, `/games/rocks` and any unknown id, on both `/games/[id]` and `/games/[id]/play`, return status 404 on the very first request (`next start`, one `curl` per id, no repeats).
-- [ ] In `next dev`, loading every route (`/`, `/games`, `/games/asteroids`, `/games/asteroids/play`, `/hall-of-fame`, `/about`, `/login`) prints no `instant-shell-url-data` error in the terminal and shows no Instant Navigation insight in the dev overlay.
-- [ ] The home "GAMES AVAILABLE NOW" rail shows only ASTEROIDS, and the stat shows `1 GAMES`.
-- [ ] With no scores, `/games/asteroids` shows best `0`, plays `0` and an empty-state message in "TOP SCORES".
-- [ ] With no scores, `/hall-of-fame` shows an empty-state message instead of an empty podium and table.
-- [ ] With no scores, the home "LATEST SCORES" and "TOP PLAYERS · TODAY" show empty-state messages.
-- [ ] On `/games/asteroids/play`, saving a score shows `SAVING…`, then `SAVED — RANK #N`, with N equal to the player's position on `/hall-of-fame`.
-- [ ] After saving, reloading `/hall-of-fame`, `/games/asteroids` and `/` shows the new score without restarting the server, and Asteroids plays go up by 1.
-- [ ] Saving twice with the same initials keeps one leaderboard row for that player, with the higher score.
-- [ ] With the network blocked, SAVE SCORE shows an error and can be retried.
-- [ ] SAVE SCORE cannot be pressed twice for the same game over.
-- [ ] The home "LATEST SCORES" shows the newly saved score first, and "TOP PLAYERS · TODAY" lists that player.
-- [ ] Signed in as a player with a saved score, Hall of Fame shows "YOUR BEST IN ASTEROIDS" with the real score and rank. Signed in as a player with no score, the row is hidden.
-- [ ] No secret or service-role key is used anywhere.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `supabase/migrations/` contains the schema and seed migrations, and `npm run db:types` shows no diff on a clean tree.
+- [x] Right after the seed, `games` has exactly 1 row (`asteroids`) and `scores` has 0 rows.
+- [x] `app/data/*.ts` contain no hard-coded game, score or activity arrays.
+- [x] `app/_components/game-player.tsx` contains no random score ticker and no `.game-arena` markup.
+- [x] With the publishable key, `insert`, `update` and `delete` on `games` and `scores` are rejected.
+- [x] Supabase security advisors report no issue on `games`, `scores` and the three views. The only warnings on `submit_score` are the expected `SECURITY DEFINER` ones (`anon` and `authenticated` can execute it), which stay until the Auth spec.
+- [x] `submit_score` rejects an unknown game id, a player like `ab` or `TOO_LONG_NAME1`, and a score of `-1` or `10000000`.
+- [x] `/games` shows only ASTEROIDS. Selecting ARCADE, PUZZLE or VERSUS shows the existing empty state.
+- [x] `/games/block-buster`, `/games/drop`, `/games/rocks` and any unknown id, on both `/games/[id]` and `/games/[id]/play`, return status 404 on the very first request (`next start`, one `curl` per id, no repeats).
+- [x] In `next dev`, loading every route (`/`, `/games`, `/games/asteroids`, `/games/asteroids/play`, `/hall-of-fame`, `/about`, `/login`) prints no `instant-shell-url-data` error in the terminal and shows no Instant Navigation insight in the dev overlay.
+- [x] The home "GAMES AVAILABLE NOW" rail shows only ASTEROIDS, and the stat shows `1 GAMES`.
+- [x] With no scores, `/games/asteroids` shows best `0`, plays `0` and an empty-state message in "TOP SCORES".
+- [x] With no scores, `/hall-of-fame` shows an empty-state message instead of an empty podium and table.
+- [x] With no scores, the home "LATEST SCORES" and "TOP PLAYERS · TODAY" show empty-state messages.
+- [x] On `/games/asteroids/play`, saving a score shows `SAVING…`, then `SAVED — RANK #N`, with N equal to the player's position on `/hall-of-fame`.
+- [x] After saving, reloading `/hall-of-fame`, `/games/asteroids` and `/` shows the new score without restarting the server, and Asteroids plays go up by 1.
+- [x] Saving twice with the same initials keeps one leaderboard row for that player, with the higher score.
+- [x] With the network blocked, SAVE SCORE shows an error and can be retried.
+- [x] SAVE SCORE cannot be pressed twice for the same game over.
+- [x] The home "LATEST SCORES" shows the newly saved score first, and "TOP PLAYERS · TODAY" lists that player.
+- [x] Signed in as a player with a saved score, Hall of Fame shows "YOUR BEST IN ASTEROIDS" with the real score and rank. Signed in as a player with no score, the row is hidden.
+- [x] No secret or service-role key is used anywhere.
 
 ## Decisions
 
@@ -187,6 +187,9 @@ Before writing code, read `node_modules/next/dist/docs/` for `'use cache'`, `cac
 - **Yes:** "TOP PLAYERS · TODAY" over the last 24 h, with an empty state. Keeps the label honest.
 - **Yes:** derive home activity from `scores`. One source of truth.
 - **Yes:** real "YOUR BEST" by session name via Server Action. The session lives on the client, so the server cannot know it at render time.
+- **Yes:** the "YOUR BEST" result is stored with the player it belongs to (`{ player, data }`) and only shown when it matches the current session. Signing in as someone else can never show the previous player's row, and no reset effect is needed on sign-out.
+- **Yes:** `getMyBests` returns `{}` on any failure instead of throwing. A broken lookup should hide one extra row, not break the Hall of Fame.
+- **No:** a loading skeleton for the "YOUR BEST" row. It appears under the table, so it moves nothing the player is reading, and a placeholder would flash for every signed-in visit.
 - **Yes:** player name rule `^[A-Z0-9_]{1,10}$`. Matches the current initials input (uppercase, max 10) and blocks markup.
 - **No:** Auth in this spec. It needs its own spec; scores stay forgeable until then.
 - **No:** rewriting the home marketing copy. It is copy, not data, and belongs to a content pass.
