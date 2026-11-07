@@ -277,7 +277,7 @@ const GAME_KEYS = ["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
 
 const FIELD_BG = "#000000";
 const BOARD_BORDER = "rgba(0, 245, 255, 0.35)";
-const LABEL_COLOR = "#8a8fb5"; // --ink-dim
+const LABEL_COLOR = "#b4b9e0"; // between --ink-dim and --ink, readable at 375 px
 const FREEZE_TINT = "rgba(64, 196, 255, 0.12)";
 
 export function createTetrisGame(
@@ -488,11 +488,12 @@ export function createTetrisGame(
       }
     }
 
-    ctx.font = "bold 14px ui-monospace, monospace";
+    // Large on purpose: the 800×600 field shrinks to ~0.37× on a phone.
+    ctx.font = "bold 22px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillStyle = LABEL_COLOR;
-    ctx.fillText("NEXT", NEXT_X, NEXT_Y + size + 22);
+    ctx.fillText("NEXT", NEXT_X, NEXT_Y + size + 30);
   }
 
   function draw() {
