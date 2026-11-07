@@ -1,4 +1,5 @@
 import type { AsteroidsSnapshot } from "./asteroids/types";
+import type { TetrisSnapshot } from "./tetris/types";
 import type { BaseSnapshot, GameCallbacks, GameEngine } from "./types";
 
 export type HudStat = {
@@ -75,5 +76,42 @@ const asteroids = defineGame<AsteroidsSnapshot>({
   ariaLabel: "Asteroids game",
 });
 
+const tetris = defineGame<TetrisSnapshot>({
+  load: async () => {
+    const { createTetrisGame } = await import("./tetris/engine");
+    return { create: createTetrisGame };
+  },
+  initialSnapshot: {
+    score: 0,
+    lines: 0,
+    level: 1,
+    freezeSeconds: 0,
+    state: "playing",
+  },
+  hud: (s) => [
+    { label: "Lines", value: s.lines, variant: "cyan" },
+    {
+      label: "Level",
+      value: String(s.level).padStart(2, "0"),
+      variant: "yellow",
+    },
+    {
+      label: "Power-up",
+      value: s.freezeSeconds > 0 ? `FREEZE ${s.freezeSeconds}s` : "—",
+      variant: "green",
+    },
+  ],
+  controls: [
+    { keys: ["←", "→"], action: "Move" },
+    { keys: ["↑", "X"], action: "Rotate" },
+    { keys: ["↓"], action: "Soft drop" },
+    { keys: ["Space"], action: "Hard drop" },
+  ],
+  ariaLabel: "Tetris game",
+});
+
 /** Playable games by `games.id`. A catalog row with no entry is "not playable yet". */
-export const registry: Record<string, AnyGameDefinition> = { asteroids };
+export const registry: Record<string, AnyGameDefinition> = {
+  asteroids,
+  tetris,
+};
