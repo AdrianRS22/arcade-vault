@@ -19,6 +19,8 @@ export type GameDefinition<S extends BaseSnapshot> = {
   /** Game keys only; GamePlayer appends the Pause row. */
   controls: { keys: string[]; action: string }[];
   ariaLabel: string;
+  /** The game has sound: GamePlayer shows MUTE/UNMUTE and handles `M`. */
+  sound?: boolean;
 };
 
 /** A definition with its snapshot type erased, as stored in the registry. */
@@ -135,6 +137,7 @@ const arkanoid = defineGame<ArkanoidSnapshot>({
     { keys: ["Mouse"], action: "Move paddle" },
   ],
   ariaLabel: "Arkanoid game",
+  sound: true,
 });
 
 /** Playable games by `games.id`. A catalog row with no entry is "not playable yet". */

@@ -1,8 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { Game } from "@/app/data/games";
+import { isMuted, setMuted, subscribe } from "@/lib/games/shared/audio";
 import { registry, type AnyGameDefinition } from "@/lib/games/registry";
 import type { BaseSnapshot } from "@/lib/games/types";
 import { GameCanvas, type GameHandle } from "./games/game-canvas";
@@ -11,6 +18,8 @@ import { useSession } from "./session-provider";
 
 // Every game shares the platform's pause; games only list their own keys.
 const PAUSE_CONTROL = { keys: ["P", "Esc"], action: "Pause" };
+// Mute is platform UI too; only games that declare `sound` get it.
+const MUTE_CONTROL = { keys: ["M"], action: "Mute" };
 
 type SaveState =
   | { status: "idle" }
@@ -81,6 +90,9 @@ function PlayableGame({
   const [over, setOver] = useState(false);
   const [name, setName] = useState(user ? user.name : "GUEST");
   const [save, setSave] = useState<SaveState>({ status: "idle" });
+  // Server snapshot is muted, so the first client render matches the HTML.
+  const muted = useSyncExternalStore(subscribe, isMuted, () => true);
+  const hasSound = definition.sound === true;
 
   // The engine follows the `paused` state.
   useEffect(() => {
@@ -93,7 +105,8 @@ function PlayableGame({
     if (over) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.code !== "KeyP" && e.code !== "Escape") return;
+      const isMute = hasSound && e.code === "KeyM";
+      if (e.code !== "KeyP" && e.code !== "Escape" && !isMute) return;
       if (e.repeat) return;
       const target = e.target;
       if (
@@ -103,7 +116,8 @@ function PlayableGame({
           target.isContentEditable)
       )
         return;
-      setPaused((p) => !p);
+      if (isMute) setMuted(!isMuted());
+      else setPaused((p) => !p);
     };
     const onVisibility = () => {
       if (document.hidden) setPaused(true);
@@ -115,7 +129,7 @@ function PlayableGame({
       window.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [over]);
+  }, [over, hasSound]);
 
   const handleChange = useCallback((s: BaseSnapshot) => setSnapshot(s), []);
 
@@ -159,7 +173,11 @@ function PlayableGame({
     if (run === runRef.current) setSave(next);
   };
 
-  const controls = [...definition.controls, PAUSE_CONTROL];
+  const controls = [
+    ...definition.controls,
+    PAUSE_CONTROL,
+    ...(hasSound ? [MUTE_CONTROL] : []),
+  ];
 
   return (
     <div className="av-player fade-in">
@@ -191,6 +209,15 @@ function PlayableGame({
           >
             {paused ? "RESUME" : "PAUSE"}
           </button>
+          {hasSound && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => setMuted(!muted)}
+            >
+              {muted ? "UNMUTE" : "MUTE"}
+            </button>
+          )}
           <button type="button" className="btn magenta" onClick={end}>
             END
           </button>
