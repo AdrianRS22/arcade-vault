@@ -1,3 +1,4 @@
+import type { ArkanoidSnapshot } from "./arkanoid/types";
 import type { AsteroidsSnapshot } from "./asteroids/types";
 import type { TetrisSnapshot } from "./tetris/types";
 import type { BaseSnapshot, GameCallbacks, GameEngine } from "./types";
@@ -18,6 +19,8 @@ export type GameDefinition<S extends BaseSnapshot> = {
   /** Game keys only; GamePlayer appends the Pause row. */
   controls: { keys: string[]; action: string }[];
   ariaLabel: string;
+  /** The game has sound: GamePlayer shows MUTE/UNMUTE and handles `M`. */
+  sound?: boolean;
 };
 
 /** A definition with its snapshot type erased, as stored in the registry. */
@@ -110,8 +113,36 @@ const tetris = defineGame<TetrisSnapshot>({
   ariaLabel: "Tetris game",
 });
 
+const arkanoid = defineGame<ArkanoidSnapshot>({
+  load: async () => {
+    const { createArkanoidGame } = await import("./arkanoid/engine");
+    return { create: createArkanoidGame };
+  },
+  initialSnapshot: { score: 0, lives: 3, level: 1, state: "playing" },
+  hud: (s) => [
+    {
+      label: "Lives",
+      value: "♥ ".repeat(s.lives).trim() || "—",
+      variant: "magenta",
+    },
+    {
+      label: "Level",
+      value: String(s.level).padStart(2, "0"),
+      variant: "yellow",
+    },
+  ],
+  controls: [
+    { keys: ["←", "→"], action: "Move paddle" },
+    { keys: ["A", "D"], action: "Move paddle" },
+    { keys: ["Mouse"], action: "Move paddle" },
+  ],
+  ariaLabel: "Arkanoid game",
+  sound: true,
+});
+
 /** Playable games by `games.id`. A catalog row with no entry is "not playable yet". */
 export const registry: Record<string, AnyGameDefinition> = {
   asteroids,
   tetris,
+  arkanoid,
 };
