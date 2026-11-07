@@ -626,7 +626,24 @@ a { color: inherit; text-decoration: none; }
 .hud-stat .v { font-family: var(--pixel); font-size: 16px; color: var(--cyan); text-shadow: 0 0 6px rgba(0,245,255,0.5); }
 .hud-stat.lives .v { color: var(--magenta); text-shadow: 0 0 6px rgba(255,0,110,0.5); }
 .hud-stat.level .v { color: var(--yellow); text-shadow: 0 0 6px rgba(245,255,0,0.5); }
+.hud-stat.power { min-width: 150px; }
+.hud-stat.power .v { color: var(--green); text-shadow: 0 0 6px rgba(0,255,136,0.5); font-size: 12px; line-height: 16px; white-space: pre; }
 .hud-actions { display: flex; gap: 10px; }
+
+/* keyboard legend under the CRT */
+.controls-legend {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px 28px;
+  margin: 22px 0 0; padding: 0; list-style: none;
+  font-family: var(--mono); font-size: 12px; color: var(--ink-dim);
+}
+.controls-legend li { display: inline-flex; align-items: center; gap: 10px; }
+.controls-legend .keys { display: inline-flex; gap: 4px; }
+.controls-legend kbd {
+  min-width: 26px; padding: 3px 7px;
+  border: 1px solid var(--line); border-bottom-width: 2px;
+  background: var(--bg-2); color: var(--ink);
+  font-family: var(--mono); font-size: 11px; text-align: center;
+}
 
 .crt {
   position: relative;
@@ -662,6 +679,7 @@ a { color: inherit; text-decoration: none; }
 }
 .crt-screen::before {
   content: "";
+  z-index: 1; /* keep the vignette above a real game canvas */
   position: absolute; inset: 0;
   background: radial-gradient(120% 90% at 50% 50%, transparent 60%, rgba(0,0,0,0.65));
   pointer-events: none;
