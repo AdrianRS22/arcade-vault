@@ -1,6 +1,6 @@
 # SPEC 08 — Tetris game
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 06, SPEC 07
 > **Date:** 2026-11-07
 > **Objective:** Port the vanilla canvas Tetris in `references/started-games/03-tetris/` to a typed engine played at `/games/tetris/play`, with its own leaderboard, and generalize the player with a game registry now that it is the second real game.
@@ -180,41 +180,41 @@ Before writing code, read `node_modules/next/dist/docs/` for Client Components, 
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `supabase/migrations/` contains `*_seed_tetris.sql`, `npm run db:types` shows no diff, and `games` has the `tetris` row with 0 scores.
-- [ ] `/games` and `/games/tetris` show the title TETRIS and its description; the home "GAMES AVAILABLE NOW" rail lists it with the `cover-tetro` cover.
-- [ ] `/games/tetris/play` runs the real engine with the listed controls.
-- [ ] HUD values (SCORE, LINES, LEVEL, POWER-UP) always match the engine.
-- [ ] Losing opens the GAME OVER modal with the same score as the HUD; END opens it with the current score; PLAY AGAIN restarts with score 0, lines 0 and level 1.
-- [ ] PAUSE, `P` and `Esc` freeze the game and show PAUSED; resuming does not drop the piece by a jump; switching tab pauses.
-- [ ] Arrow keys and Space do not scroll the page while playing; typing initials in the modal does not affect the game.
-- [ ] Leaving the play page and coming back runs a single loop (normal speed, no console errors).
-- [ ] The canvas uses the neon palette, not plain white.
-- [ ] At 375 px wide the canvas fits the CRT with no horizontal scroll.
-- [ ] SAVE SCORE shows `SAVING…` then `SAVED — RANK #N`; the score appears in the Hall of Fame tab for TETRIS, in the detail "TOP SCORES" and in home "LATEST SCORES"; the game's plays go up by 1; the Asteroids leaderboard is unchanged.
-- [ ] Asteroids still plays and saves exactly as before (HUD LIVES, LEVEL and power-up, controls legend, pause, END, PLAY AGAIN, SAVE SCORE).
-- [ ] A catalog row with no registry entry shows "NOT PLAYABLE YET" at its play URL instead of crashing (check right after step 3, before step 8).
-- [ ] No secret or service-role key is used.
-- [ ] `lib/games/asteroids/input.ts` and `app/_components/games/asteroids-canvas.tsx` no longer exist; no file imports them.
-- [ ] `←` and `→` move the piece one column per press and never into a wall or a locked block; holding the key keeps moving it.
-- [ ] `↑` and `X` rotate the piece clockwise; a piece against the left or right wall that has room after a shift of up to 2 columns still rotates.
-- [ ] Each `↓` press adds 1 point and moves the piece down one row; with the piece resting, `↓` locks it.
-- [ ] `Space` drops the piece to the ghost position, adds 2 points per cell dropped and locks it at once.
-- [ ] The ghost piece shows where the current piece lands, at 20% opacity, and follows moves and rotations.
-- [ ] The NEXT box shows the piece that spawns after the current one.
-- [ ] At level 1, clearing 1, 2, 3 and 4 lines at once adds 100, 300, 500 and 800 points (plus drop points); at level N, the line points are multiplied by N.
-- [ ] LINES counts every cleared row, and LEVEL goes up by 1 at 10, 20, 30… lines.
-- [ ] Gravity interval is 1.00 s at level 1, 0.91 s at level 2 and never below 0.10 s (`dropInterval` in `constants.ts`).
-- [ ] After every 5th cleared line (counted by total, even if one clear crosses it), the NEXT box shows a power-up icon and that piece spawns as a single cell.
-- [ ] A landed power-up is not left on the board, and adds 50 × level points.
-- [ ] Bomb clears the 3×3 area, lightning clears the row and column, tint turns one colour into white wild blocks, gravity removes the gaps in every column.
-- [ ] A row with one gap and a wild block clears; a row with two gaps and a wild block does not.
-- [ ] Freeze stops the falling piece for 5 s, the HUD shows `FREEZE Ns` counting down to `—`, and movement, rotation and drops still work meanwhile.
-- [ ] A new piece that collides on spawn opens GAME OVER once (`onGameOver` is called a single time per run).
-- [ ] The score never exceeds 9,999,999 in the HUD or in the saved row.
-- [ ] The canvas draws no SCORE, LINES, LEVEL, GAME OVER or restart text.
-- [ ] Unfocusing the window (without hiding the tab) does not open any pause menu of its own; only the platform pause exists.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `supabase/migrations/` contains `*_seed_tetris.sql`, `npm run db:types` shows no diff, and `games` has the `tetris` row with 0 scores.
+- [x] `/games` and `/games/tetris` show the title TETRIS and its description; the home "GAMES AVAILABLE NOW" rail lists it with the `cover-tetro` cover.
+- [x] `/games/tetris/play` runs the real engine with the listed controls.
+- [x] HUD values (SCORE, LINES, LEVEL, POWER-UP) always match the engine.
+- [x] Losing opens the GAME OVER modal with the same score as the HUD; END opens it with the current score; PLAY AGAIN restarts with score 0, lines 0 and level 1.
+- [x] PAUSE, `P` and `Esc` freeze the game and show PAUSED; resuming does not drop the piece by a jump; switching tab pauses.
+- [x] Arrow keys and Space do not scroll the page while playing; typing initials in the modal does not affect the game.
+- [x] Leaving the play page and coming back runs a single loop (normal speed, no console errors).
+- [x] The canvas uses the neon palette, not plain white.
+- [x] At 375 px wide the canvas fits the CRT with no horizontal scroll.
+- [x] SAVE SCORE shows `SAVING…` then `SAVED — RANK #N`; the score appears in the Hall of Fame tab for TETRIS, in the detail "TOP SCORES" and in home "LATEST SCORES"; the game's plays go up by 1; the Asteroids leaderboard is unchanged.
+- [x] Asteroids still plays and saves exactly as before (HUD LIVES, LEVEL and power-up, controls legend, pause, END, PLAY AGAIN, SAVE SCORE).
+- [x] A catalog row with no registry entry shows "NOT PLAYABLE YET" at its play URL instead of crashing (check right after step 3, before step 8).
+- [x] No secret or service-role key is used.
+- [x] `lib/games/asteroids/input.ts` and `app/_components/games/asteroids-canvas.tsx` no longer exist; no file imports them.
+- [x] `←` and `→` move the piece one column per press and never into a wall or a locked block; holding the key keeps moving it.
+- [x] `↑` and `X` rotate the piece clockwise; a piece against the left or right wall that has room after a shift of up to 2 columns still rotates.
+- [x] Each `↓` press adds 1 point and moves the piece down one row; with the piece resting, `↓` locks it.
+- [x] `Space` drops the piece to the ghost position, adds 2 points per cell dropped and locks it at once.
+- [x] The ghost piece shows where the current piece lands, at 20% opacity, and follows moves and rotations.
+- [x] The NEXT box shows the piece that spawns after the current one.
+- [x] At level 1, clearing 1, 2, 3 and 4 lines at once adds 100, 300, 500 and 800 points (plus drop points); at level N, the line points are multiplied by N.
+- [x] LINES counts every cleared row, and LEVEL goes up by 1 at 10, 20, 30… lines.
+- [x] Gravity interval is 1.00 s at level 1, 0.91 s at level 2 and never below 0.10 s (`dropInterval` in `constants.ts`).
+- [x] After every 5th cleared line (counted by total, even if one clear crosses it), the NEXT box shows a power-up icon and that piece spawns as a single cell.
+- [x] A landed power-up is not left on the board, and adds 50 × level points.
+- [x] Bomb clears the 3×3 area, lightning clears the row and column, tint turns one colour into white wild blocks, gravity removes the gaps in every column.
+- [x] A row with one gap and a wild block clears; a row with two gaps and a wild block does not.
+- [x] Freeze stops the falling piece for 5 s, the HUD shows `FREEZE Ns` counting down to `—`, and movement, rotation and drops still work meanwhile.
+- [x] A new piece that collides on spawn opens GAME OVER once (`onGameOver` is called a single time per run).
+- [x] The score never exceeds 9,999,999 in the HUD or in the saved row.
+- [x] The canvas draws no SCORE, LINES, LEVEL, GAME OVER or restart text.
+- [x] Unfocusing the window (without hiding the tab) does not open any pause menu of its own; only the platform pause exists.
 
 ## Decisions
 
