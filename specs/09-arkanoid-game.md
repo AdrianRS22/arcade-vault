@@ -1,6 +1,6 @@
 # SPEC 09 — Arkanoid game
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 06, SPEC 07, SPEC 08
 > **Date:** 2026-11-07
 > **Objective:** Port the vanilla canvas Arkanoid in `references/started-games/04-arkanoid/` to a typed engine played at `/games/arkanoid/play`, with its own leaderboard and the platform's first shared sound module.
@@ -171,34 +171,34 @@ Before writing code, read `node_modules/next/dist/docs/` for Client Components, 
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `supabase/migrations/` contains `20261107120300_seed_arkanoid.sql`, `npm run db:types` shows no diff, and `games` has the `arkanoid` row with 0 scores.
-- [ ] `/games` and `/games/arkanoid` show the title ARKANOID and its description; the home "GAMES AVAILABLE NOW" rail lists it with the `cover-bricks` cover.
-- [ ] `/games/arkanoid/play` runs the real engine with the listed controls.
-- [ ] HUD values (SCORE, LIVES, LEVEL) always match the engine.
-- [ ] Losing the last life opens the GAME OVER modal with the same score as the HUD; END opens it with the current score; PLAY AGAIN restarts with score 0, 3 lives, level 1 and the full layout 1.
-- [ ] PAUSE, `P` and `Esc` freeze the game and show PAUSED; resuming does not make the ball jump; switching tab pauses.
-- [ ] Arrow keys and Space do not scroll the page while playing; typing initials in the modal (including `M`, `A`, `D`) does not affect the game or the mute state.
-- [ ] Leaving the play page and coming back runs a single loop (normal ball speed, no console errors).
-- [ ] The canvas uses the neon palette (dark background, magenta "LEVEL N"), not plain white text on black.
-- [ ] At 375 px wide the canvas fits the CRT with no horizontal scroll.
-- [ ] SAVE SCORE shows `SAVING…` then `SAVED — RANK #N`; the score appears in the Hall of Fame tab for ARKANOID, in the detail "TOP SCORES" and in home "LATEST SCORES"; the game's plays go up by 1; the Asteroids and Tetris leaderboards are unchanged.
-- [ ] Asteroids and Tetris still play and save exactly as before, with no MUTE button.
-- [ ] No secret or service-role key is used.
-- [ ] Sound: on a fresh browser profile the game is muted; MUTE/UNMUTE and `M` toggle it; the choice survives a reload (`localStorage["av:muted"]`); no audio plays after leaving the page or while PAUSED; the console shows no autoplay errors.
-- [ ] Unmuted, hitting the paddle plays `ball-bounce.mp3` and breaking a brick plays `break-sound.mp3`.
-- [ ] Assets: the network panel shows no 404 for the spritesheet or the sounds; blocking the spritesheet URL leaves a blank canvas, no crash and no GAME OVER.
-- [ ] `←` `→` and `A` `D` move the paddle at 600 px/s and it never leaves the field; moving the mouse over the canvas centers the paddle under the pointer.
-- [ ] At the start of each level, the field is frozen for 1.5 s with a "LEVEL N" banner. Then the ball rests on the paddle for 1 s and launches up-right at 45°.
-- [ ] The ball bounces off the side walls, the ceiling and the paddle, and only a falling ball bounces off the paddle.
-- [ ] Breaking a brick adds exactly its color points (red 70, yellow 60, cyan 50, magenta 40, hotpink 30, green 20) and plays a 4-frame explosion.
-- [ ] Clearing a layout adds `1,000 × level` points, increments LEVEL and loads the next layout (level 4 uses layout 1 again).
-- [ ] At level 4 the ball moves 10% faster than at level 1, at level 7 it moves 20% faster, and it never exceeds 720 px/s.
-- [ ] At 720 px/s the ball never passes through the paddle or a brick.
-- [ ] Losing a ball removes one life and returns to the serve; at 0 lives `onGameOver` is called once.
-- [ ] The score never exceeds 9,999,999 in the HUD or in the saved row.
-- [ ] The canvas draws no SCORE, LIVES, GAME OVER, "won" or restart text, and Space or a click on the canvas does not restart.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `supabase/migrations/` contains `20261107120300_seed_arkanoid.sql`, `npm run db:types` shows no diff, and `games` has the `arkanoid` row with 0 scores.
+- [x] `/games` and `/games/arkanoid` show the title ARKANOID and its description; the home "GAMES AVAILABLE NOW" rail lists it with the `cover-bricks` cover.
+- [x] `/games/arkanoid/play` runs the real engine with the listed controls.
+- [x] HUD values (SCORE, LIVES, LEVEL) always match the engine.
+- [x] Losing the last life opens the GAME OVER modal with the same score as the HUD; END opens it with the current score; PLAY AGAIN restarts with score 0, 3 lives, level 1 and the full layout 1.
+- [x] PAUSE, `P` and `Esc` freeze the game and show PAUSED; resuming does not make the ball jump; switching tab pauses.
+- [x] Arrow keys and Space do not scroll the page while playing; typing initials in the modal (including `M`, `A`, `D`) does not affect the game or the mute state.
+- [x] Leaving the play page and coming back runs a single loop (normal ball speed, no console errors).
+- [x] The canvas uses the neon palette (dark background, magenta "LEVEL N"), not plain white text on black.
+- [x] At 375 px wide the canvas fits the CRT with no horizontal scroll.
+- [x] SAVE SCORE shows `SAVING…` then `SAVED — RANK #N`; the score appears in the Hall of Fame tab for ARKANOID, in the detail "TOP SCORES" and in home "LATEST SCORES"; the game's plays go up by 1; the Asteroids and Tetris leaderboards are unchanged.
+- [x] Asteroids and Tetris still play and save exactly as before, with no MUTE button.
+- [x] No secret or service-role key is used.
+- [x] Sound: on a fresh browser profile the game is muted; MUTE/UNMUTE and `M` toggle it; the choice survives a reload (`localStorage["av:muted"]`); no audio plays after leaving the page or while PAUSED; the console shows no autoplay errors.
+- [x] Unmuted, hitting the paddle plays `ball-bounce.mp3` and breaking a brick plays `break-sound.mp3`.
+- [x] Assets: the network panel shows no 404 for the spritesheet or the sounds; blocking the spritesheet URL leaves a blank canvas, no crash and no GAME OVER.
+- [x] `←` `→` and `A` `D` move the paddle at 600 px/s and it never leaves the field; moving the mouse over the canvas centers the paddle under the pointer.
+- [x] At the start of each level, the field is frozen for 1.5 s with a "LEVEL N" banner. Then the ball rests on the paddle for 1 s and launches up-right at 45°.
+- [x] The ball bounces off the side walls, the ceiling and the paddle, and only a falling ball bounces off the paddle.
+- [x] Breaking a brick adds exactly its color points (red 70, yellow 60, cyan 50, magenta 40, hotpink 30, green 20) and plays a 4-frame explosion.
+- [x] Clearing a layout adds `1,000 × level` points, increments LEVEL and loads the next layout (level 4 uses layout 1 again).
+- [x] At level 4 the ball moves 10% faster than at level 1, at level 7 it moves 20% faster, and it never exceeds 720 px/s.
+- [x] At 720 px/s the ball never passes through the paddle or a brick.
+- [x] Losing a ball removes one life and returns to the serve; at 0 lives `onGameOver` is called once.
+- [x] The score never exceeds 9,999,999 in the HUD or in the saved row.
+- [x] The canvas draws no SCORE, LIVES, GAME OVER, "won" or restart text, and Space or a click on the canvas does not restart.
 
 ## Decisions
 
