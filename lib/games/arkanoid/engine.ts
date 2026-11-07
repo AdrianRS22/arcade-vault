@@ -1,3 +1,5 @@
+import { createInput } from "../shared/input";
+import type { GameEngine } from "../types";
 import {
   BALL,
   BRICK_POINTS,
@@ -6,18 +8,26 @@ import {
   H,
   LEVEL_CLEAR_BONUS,
   LEVEL_INTRO,
+  MAX_DT,
   MAX_SCORE,
   MAX_SPEED_FACTOR,
   MAX_STEP,
   PADDLE,
+  PALETTE,
   SERVE_DELAY,
   SPEED_STEP,
   START_LIVES,
   W,
 } from "./constants";
 import { BRICK_COLORS, LEVELS } from "./levels";
-import { EXPLOSION_FRAMES } from "./sprites";
+import {
+  drawFrame,
+  drawSprite,
+  EXPLOSION_FRAMES,
+  loadSpritesheet,
+} from "./sprites";
 import type {
+  ArkanoidCallbacks,
   ArkanoidSnapshot,
   ArkanoidState,
   Brick,
@@ -297,4 +307,192 @@ export function update(world: World, dt: number, hooks: StepHooks): void {
   updatePaddle(world, dt);
   updateBall(world, dt, hooks);
   updateExplosions(world, dt);
+}
+
+// ── Engine ────────────────────────────────────────────────────────────────────
+const stepWorld = update;
+const SPRITESHEET_URL = "/games/arkanoid/spritesheet-breakout.png";
+const GAME_KEYS = ["Space", "ArrowLeft", "ArrowRight"] as const;
+const BANNER_FONT = 'bold 48px "Press Start 2P", ui-monospace, monospace';
+
+export function createArkanoidGame(
+  canvas: HTMLCanvasElement,
+  callbacks: ArkanoidCallbacks,
+): GameEngine {
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D context is not available");
+
+  // Logical field is W×H; the backing store follows devicePixelRatio.
+  const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = false;
+
+  const input = createInput({ preventDefault: GAME_KEYS });
+  const world = createWorld();
+  const hooks: StepHooks = { onBounce() {}, onBreak() {} }; // sounds: step 6
+
+  let sheet: HTMLImageElement | null = null;
+  let gameOverSent = false;
+  let running = false;
+  let paused = false;
+  let destroyed = false;
+  let rafId = 0;
+  let lastTime: number | null = null;
+
+  // Mouse: CSS px mapped to logical px through the canvas rect.
+  const onMouseMove = (e: MouseEvent) => {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0) return;
+    world.input.mouseX = (e.clientX - rect.left) * (W / rect.width);
+  };
+  canvas.addEventListener("mousemove", onMouseMove);
+
+  // ── Snapshot (React-facing) ─────────────────────────────────────────────────
+  let lastSnap: ArkanoidSnapshot | null = null;
+
+  function emit() {
+    const snap = snapshotOf(world);
+    if (
+      lastSnap &&
+      lastSnap.score === snap.score &&
+      lastSnap.lives === snap.lives &&
+      lastSnap.level === snap.level &&
+      lastSnap.state === snap.state
+    )
+      return;
+    lastSnap = snap;
+    callbacks.onChange(snap);
+  }
+
+  // ── Draw ────────────────────────────────────────────────────────────────────
+  function draw() {
+    if (!ctx || !sheet) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = PALETTE.bg;
+    ctx.fillRect(0, 0, W, H);
+
+    for (const b of world.bricks) {
+      if (b.alive)
+        drawSprite(ctx, sheet, `block_${b.color}`, b.x, b.y, BRICKS.w, BRICKS.h);
+    }
+
+    for (const e of world.explosions) {
+      const frame = EXPLOSION_FRAMES[e.color][Math.floor(e.t / EXPLOSION_FRAME)];
+      if (frame) drawFrame(ctx, sheet, frame, e.x, e.y, BRICKS.w, BRICKS.h);
+    }
+
+    // Glow only on the paddle and the ball
+    ctx.shadowColor = PALETTE.glow;
+    ctx.shadowBlur = 12;
+    drawSprite(ctx, sheet, "paddle", world.paddleX, PADDLE.y, PADDLE.w, PADDLE.h);
+    drawSprite(ctx, sheet, "ball", world.ball.x, world.ball.y, BALL.size, BALL.size);
+    ctx.shadowBlur = 0;
+
+    if (world.state === "playing" && world.levelIntro > 0) {
+      ctx.fillStyle = "rgba(10, 10, 15, 0.55)";
+      ctx.fillRect(0, 0, W, H);
+      ctx.font = BANNER_FONT;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = PALETTE.banner;
+      ctx.shadowColor = PALETTE.banner;
+      ctx.shadowBlur = 16;
+      ctx.fillText(`LEVEL ${world.level}`, W / 2, H / 2);
+      ctx.shadowBlur = 0;
+    }
+  }
+
+  function stop() {
+    running = false;
+    cancelAnimationFrame(rafId);
+  }
+
+  function settle() {
+    if (world.state !== "gameover" || gameOverSent) return;
+    gameOverSent = true;
+    emit();
+    draw();
+    stop();
+    callbacks.onGameOver(world.score);
+  }
+
+  // ── Main loop ───────────────────────────────────────────────────────────────
+  function loop(ts: number) {
+    if (!running) return;
+    const dt = lastTime === null ? 0 : Math.min((ts - lastTime) / 1000, MAX_DT);
+    lastTime = ts;
+    world.input.left = !!(input.keys.ArrowLeft || input.keys.KeyA);
+    world.input.right = !!(input.keys.ArrowRight || input.keys.KeyD);
+    stepWorld(world, dt, hooks);
+    if (world.state === "gameover") {
+      settle();
+      return;
+    }
+    draw();
+    emit();
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function start() {
+    if (running || destroyed || paused || !sheet) return;
+    running = true;
+    lastTime = null; // no dt jump after a pause or restart
+    rafId = requestAnimationFrame(loop);
+  }
+
+  // The loop starts only after the spritesheet loads; on failure nothing is
+  // drawn and `onGameOver` is never called.
+  loadSpritesheet(SPRITESHEET_URL).then(
+    (img) => {
+      if (destroyed) return;
+      sheet = img;
+      emit();
+      draw();
+      start();
+    },
+    (err: unknown) => {
+      if (!destroyed) console.error(err);
+    },
+  );
+
+  // ── Public API ──────────────────────────────────────────────────────────────
+  return {
+    pause() {
+      if (destroyed || paused || world.state === "gameover") return;
+      paused = true;
+      stop();
+    },
+    resume() {
+      if (destroyed || !paused) return;
+      paused = false;
+      input.reset();
+      start();
+    },
+    end() {
+      if (destroyed || world.state === "gameover") return;
+      paused = false;
+      world.state = "gameover";
+      settle();
+    },
+    restart() {
+      if (destroyed) return;
+      stop();
+      paused = false;
+      gameOverSent = false;
+      resetWorld(world);
+      input.reset();
+      emit();
+      draw();
+      start();
+    },
+    destroy() {
+      if (destroyed) return;
+      destroyed = true;
+      stop();
+      input.detach();
+      canvas.removeEventListener("mousemove", onMouseMove);
+    },
+  };
 }
