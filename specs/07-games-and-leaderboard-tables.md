@@ -17,6 +17,8 @@ SPEC 05 left Supabase connected with no schema. SPEC 06 delivered the first real
 - Seed migration with a single game, `asteroids`, using its current text from `app/data/games.ts`. `plays` starts at 0. No scores are seeded.
 - Regenerated `types/supabase.ts`.
 - `lib/supabase/public.ts`: cookie-less client for cached reads.
+- `app/data/categories.ts`: `CATEGORIES` moved out of `app/data/games.ts` so Client Components can import it. `games.ts` now uses server-only APIs (`next/cache`, Supabase).
+- `export const ensureStatic = "navigation"` in `app/games/[id]/page.tsx` and `app/games/[id]/play/page.tsx`, so unknown game ids answer 404 on the first request.
 - `app/data/games.ts`, `app/data/scores.ts` and `app/data/activity.ts` read from Supabase. Every hard-coded array (`GAMES`, `ROWS`, `RECENT_SCORES`, `TOP_PLAYERS_TODAY`) and the mock `getPlayerBest` are deleted.
 - Cached reads with `'use cache'` plus `cacheTag('games')` and `cacheTag('scores')`.
 - `best` derived from `max(scores.score)`. `plays` is an integer column, shown formatted (`1.2K`), and goes up by 1 on each saved score.
@@ -122,7 +124,7 @@ export async function saveScore(
 1. Write the schema migration (tables, indexes, RLS, views, `submit_score`, grants). Run `npm run db:push`, then `npm run db:types`. Check with Supabase MCP `get_advisors` (security) that there are no warnings on the new objects.
 2. Write the Asteroids seed migration and push it. Check with MCP `execute_sql`: `games` has 1 row and `scores` has 0.
 3. Create `lib/supabase/public.ts`: `createPublicClient()` with `@supabase/supabase-js` `createClient<Database>`, values from `lib/supabase/env.ts`, no cookies, no session persistence. Safe inside `'use cache'`.
-4. Rewrite `app/data/games.ts` on `games_with_best` (ordered by `sort_order`), cached with `cacheTag('games')` and `cacheTag('scores')`. Delete `GAMES`. Add `formatPlays` and use it in `app/games/[id]/page.tsx`. Check: `/games` shows only ASTEROIDS and the other category chips show the existing empty state. `/games/block-buster` returns 404.
+4. Rewrite `app/data/games.ts` on `games_with_best` (ordered by `sort_order`), cached with `cacheTag('games')` and `cacheTag('scores')`. Delete `GAMES`. Add `formatPlays` and use it in `app/games/[id]/page.tsx`. Move `CATEGORIES` to `app/data/categories.ts` and update the import in `app/_components/library-browser.tsx` (a Client Component cannot import `games.ts` any more). Add `export const ensureStatic = "navigation"` to `app/games/[id]/page.tsx` and `app/games/[id]/play/page.tsx`. Check: `/games` shows only ASTEROIDS and the other category chips show the existing empty state. `/games/block-buster` returns 404 on the first request.
 5. Rewrite `app/data/scores.ts` on `player_bests` (cached, `cacheTag('scores')`), with `date` formatted `DD/MM/YYYY`. Delete `ROWS` and `getPlayerBest`. Add `getPlayerBests(player)` (not cached). Add empty states to the detail "TOP SCORES" block and the Hall of Fame podium and table.
 6. Rewrite `app/data/activity.ts` on `scores` joined with `games` (latest scores) and on `top_players_today`. Cache with `cacheTag('scores')` and a short `cacheLife` so `ago` and "today" do not go stale for hours. Delete both arrays. Add empty states to "LATEST SCORES" and "TOP PLAYERS · TODAY" on the home.
 7. Remove the fake arena from `app/_components/game-player.tsx`: the random score interval, the `.game-arena` markup, the `isReal` flag and its branches. The player always mounts `AsteroidsCanvas`. Check: `/games/asteroids/play` plays exactly as in SPEC 06.
@@ -144,7 +146,7 @@ Before writing code, read `node_modules/next/dist/docs/` for `'use cache'`, `cac
 - [ ] Supabase security advisors report no issue on `games`, `scores` and the three views. The only warnings on `submit_score` are the expected `SECURITY DEFINER` ones (`anon` and `authenticated` can execute it), which stay until the Auth spec.
 - [ ] `submit_score` rejects an unknown game id, a player like `ab` or `TOO_LONG_NAME1`, and a score of `-1` or `10000000`.
 - [ ] `/games` shows only ASTEROIDS. Selecting ARCADE, PUZZLE or VERSUS shows the existing empty state.
-- [ ] `/games/block-buster`, `/games/drop` and the other removed ids return 404.
+- [ ] `/games/block-buster`, `/games/drop`, `/games/rocks` and any unknown id, on both `/games/[id]` and `/games/[id]/play`, return status 404 on the very first request (`next start`, one `curl` per id, no repeats).
 - [ ] The home "GAMES AVAILABLE NOW" rail shows only ASTEROIDS, and the stat shows `1 GAMES`.
 - [ ] With no scores, `/games/asteroids` shows best `0`, plays `0` and an empty-state message in "TOP SCORES".
 - [ ] With no scores, `/hall-of-fame` shows an empty-state message instead of an empty podium and table.
@@ -182,20 +184,25 @@ Before writing code, read `node_modules/next/dist/docs/` for `'use cache'`, `cac
 - **Yes:** player name rule `^[A-Z0-9_]{1,10}$`. Matches the current initials input (uppercase, max 10) and blocks markup.
 - **No:** Auth in this spec. It needs its own spec; scores stay forgeable until then.
 - **No:** rewriting the home marketing copy. It is copy, not data, and belongs to a content pass.
+- **Yes:** `ensureStatic = "navigation"` on the two `[id]` pages. The project has `partialPrefetching: true`, so an id missing from `generateStaticParams` first gets the App Shell with status 200 and `notFound()` only shows later (a soft 404). `'navigation'` makes Next wait for the complete page, so the 404 status is right on the first request.
+- **No:** `dynamicParams = false` for the same problem. The docs say it is not available with Cache Components.
+- **No:** a Proxy check on the slug. Heavier than one line of route config, and it would duplicate the catalog lookup outside the page.
+- **Yes:** move `CATEGORIES` to `app/data/categories.ts`. `games.ts` imports `cacheTag` and the Supabase client, so a Client Component that imports a value from it breaks the build.
 
 ## Risks
 
-| Risk                                                                                     | Mitigation                                                                                           |
-| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Anyone can submit a fake score through the publishable key                               | Accepted until Auth. `submit_score` caps the range and validates the name; noted here.               |
-| Different people sharing the same initials                                               | Accepted without Auth; the leaderboard groups by name.                                               |
-| `cookies()` inside a `'use cache'` scope breaks the build                                | Cached reads use only `lib/supabase/public.ts`.                                                      |
-| `ago` and "today" go stale inside cached output                                          | Short `cacheLife` on activity reads, and invalidation on every save.                                 |
-| `security definer` function with a mutable `search_path`                                 | `set search_path = ''` and fully qualified names; the advisors check it.                             |
-| Views bypass RLS                                                                         | Created with `security_invoker = true`.                                                              |
-| Supabase down, so catalog pages fail                                                     | The error shows at build or request time. There is no silent fallback because the mocks are deleted. |
-| `generateStaticParams` now hits the database at build time                               | Uses the cached public client; the build criterion checks it.                                        |
-| Pages built for many items (podium, rail, tabs) look broken with one game and few scores | Empty states and acceptance criteria for the zero-score case.                                        |
+| Risk                                                                                                                 | Mitigation                                                                                                              |
+| -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Anyone can submit a fake score through the publishable key                                                           | Accepted until Auth. `submit_score` caps the range and validates the name; noted here.                                  |
+| Different people sharing the same initials                                                                           | Accepted without Auth; the leaderboard groups by name.                                                                  |
+| `cookies()` inside a `'use cache'` scope breaks the build                                                            | Cached reads use only `lib/supabase/public.ts`.                                                                         |
+| `ago` and "today" go stale inside cached output                                                                      | Short `cacheLife` on activity reads, and invalidation on every save.                                                    |
+| `security definer` function with a mutable `search_path`                                                             | `set search_path = ''` and fully qualified names; the advisors check it.                                                |
+| Views bypass RLS                                                                                                     | Created with `security_invoker = true`.                                                                                 |
+| Supabase down, so catalog pages fail                                                                                 | The error shows at build or request time. There is no silent fallback because the mocks are deleted.                    |
+| `generateStaticParams` now hits the database at build time                                                           | Uses the cached public client; the build criterion checks it.                                                           |
+| Pages built for many items (podium, rail, tabs) look broken with one game and few scores                             | Empty states and acceptance criteria for the zero-score case.                                                           |
+| `ensureStatic = "navigation"` fails the build if the two `[id]` pages read uncached data or a very short `cacheLife` | Every read those pages make (steps 5 and 7) uses `'use cache'` with `cacheLife("hours")`; `npm run build` validates it. |
 
 ## What is **not** in this spec
 
