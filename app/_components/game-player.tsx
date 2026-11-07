@@ -229,7 +229,7 @@ function PlayableGame({
 
       <ul className="controls-legend" aria-label="Keyboard controls">
         {controls.map((c) => (
-          <li key={c.action}>
+          <li key={`${c.action}:${c.keys.join("+")}`}>
             <span className="keys">
               {c.keys.map((k) => (
                 <kbd key={k}>{k}</kbd>
