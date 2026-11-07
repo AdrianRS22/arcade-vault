@@ -1,6 +1,6 @@
 # SPEC 06 — Asteroids game
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 01
 > **Date:** 2026-11-06
 > **Objective:** Port the vanilla canvas game in `references/started-games/02-asteroids/` to a typed TypeScript engine that is played for real at `/games/asteroids/play`, inside the platform's CRT player, HUD and GAME OVER modal.
@@ -97,29 +97,29 @@ Before writing code, read `node_modules/next/dist/docs/` for Client Components a
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `/games/asteroids` shows the title ASTEROIDS and the rewritten description; no text mentions UFOs.
-- [ ] `/games/rocks` returns 404.
-- [ ] `/games/asteroids/play` shows a real ship in the CRT that rotates with `←` `→`, thrusts with `↑` and shoots with `Space`.
-- [ ] Destroying a large asteroid adds 20 points, a medium one 50, a small one 100, and the HUD score updates.
-- [ ] A large asteroid splits into two medium ones; a medium one into two small ones; a small one disappears.
-- [ ] Ship, bullets and asteroids wrap on both edges.
-- [ ] Hitting an asteroid removes one life in the HUD; the ship respawns after 2 s, blinking and invincible for 3 s.
-- [ ] Clearing all asteroids raises the HUD level by 1 and spawns `3 + level` large asteroids.
-- [ ] Picking up the triple-shot item shows `TRIPLE Ns` in the HUD and fires 3 bullets for 5 s.
-- [ ] Picking up the Nova item shows `NOVA [B]`; pressing `B` clears every asteroid, adds their points and flashes the screen.
-- [ ] Losing the last life opens the GAME OVER modal with the same final score as the HUD.
-- [ ] END opens the GAME OVER modal with the current score.
-- [ ] PLAY AGAIN starts a new game with score 0, 3 lives and level 1.
-- [ ] PAUSE, `P` and `Esc` freeze the game and show PAUSED; pressing again resumes without the objects jumping.
-- [ ] Switching to another tab pauses the game.
-- [ ] Typing initials with Space or arrows in the modal input does not scroll the page or affect the game.
-- [ ] Arrow keys and Space do not scroll the page while playing.
-- [ ] Leaving the play page and coming back runs a single game loop (speed is normal, no console errors).
-- [ ] The canvas uses the neon palette, not plain white.
-- [ ] At 375 px wide the canvas fits the CRT with no horizontal scroll.
-- [ ] Every other game's play page still shows the fake player and behaves as before.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `/games/asteroids` shows the title ASTEROIDS and the rewritten description; no text mentions UFOs.
+- [x] `/games/rocks` returns 404.
+- [x] `/games/asteroids/play` shows a real ship in the CRT that rotates with `←` `→`, thrusts with `↑` and shoots with `Space`.
+- [x] Destroying a large asteroid adds 20 points, a medium one 50, a small one 100, and the HUD score updates.
+- [x] A large asteroid splits into two medium ones; a medium one into two small ones; a small one disappears.
+- [x] Ship, bullets and asteroids wrap on both edges.
+- [x] Hitting an asteroid removes one life in the HUD; the ship respawns after 2 s, blinking and invincible for 3 s.
+- [x] Clearing all asteroids raises the HUD level by 1 and spawns `3 + level` large asteroids.
+- [x] Picking up the triple-shot item shows `TRIPLE Ns` in the HUD and fires 3 bullets for 5 s.
+- [x] Picking up the Nova item shows `NOVA [B]`; pressing `B` clears every asteroid, adds their points and flashes the screen.
+- [x] Losing the last life opens the GAME OVER modal with the same final score as the HUD.
+- [x] END opens the GAME OVER modal with the current score.
+- [x] PLAY AGAIN starts a new game with score 0, 3 lives and level 1.
+- [x] PAUSE, `P` and `Esc` freeze the game and show PAUSED; pressing again resumes without the objects jumping.
+- [x] Switching to another tab pauses the game.
+- [x] Typing initials with Space or arrows in the modal input does not scroll the page or affect the game.
+- [x] Arrow keys and Space do not scroll the page while playing.
+- [x] Leaving the play page and coming back runs a single game loop (speed is normal, no console errors).
+- [x] The canvas uses the neon palette, not plain white.
+- [x] At 375 px wide the canvas fits the CRT with no horizontal scroll.
+- [x] Every other game's play page still shows the fake player and behaves as before.
 
 ## Decisions
 
