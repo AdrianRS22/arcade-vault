@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import { EmptyBoard } from "@/app/_components/empty-board";
+import { PageLoading } from "@/app/_components/page-loading";
 import { formatPlays, getGameById, getGames } from "@/app/data/games";
 import { getLeaderboard } from "@/app/data/scores";
 
@@ -14,9 +16,19 @@ export async function generateStaticParams() {
   return games.map((game) => ({ id: game.id }));
 }
 
-export default async function GameDetailPage({
+// `params` is URL data: awaiting it at the top would tie the App Shell to one
+// id. The read lives inside <Suspense> so the shell stays generic.
+export default function GameDetailPage({ params }: PageProps<"/games/[id]">) {
+  return (
+    <Suspense fallback={<PageLoading />}>
+      <GameDetail params={params} />
+    </Suspense>
+  );
+}
+
+async function GameDetail({
   params,
-}: PageProps<"/games/[id]">) {
+}: Pick<PageProps<"/games/[id]">, "params">) {
   const { id } = await params;
   const game = await getGameById(id);
   if (!game) notFound();

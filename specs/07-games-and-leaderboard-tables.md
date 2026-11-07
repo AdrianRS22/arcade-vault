@@ -19,7 +19,7 @@ SPEC 05 left Supabase connected with no schema. SPEC 06 delivered the first real
 - `lib/supabase/public.ts`: cookie-less client for cached reads.
 - `app/data/categories.ts`: `CATEGORIES` moved out of `app/data/games.ts` so Client Components can import it. `games.ts` now uses server-only APIs (`next/cache`, Supabase).
 - `app/_components/empty-board.tsx` and the `.empty-board` class in `app/globals.css`: one shared empty state for every score board (title, one sentence, optional action).
-- `export const ensureStatic = "navigation"` in `app/games/[id]/page.tsx` and `app/games/[id]/play/page.tsx`, so unknown game ids answer 404 on the first request.
+- `export const ensureStatic = "navigation"` in `app/games/[id]/page.tsx` and `app/games/[id]/play/page.tsx`, so unknown game ids answer 404 on the first request. In the same two pages, `params` is read inside `<Suspense>` (inner components `GameDetail` and `Player`, fallback `app/_components/page-loading.tsx`) so `next dev` shows no Instant Navigation error.
 - `app/data/games.ts`, `app/data/scores.ts` and `app/data/activity.ts` read from Supabase. Every hard-coded array (`GAMES`, `ROWS`, `RECENT_SCORES`, `TOP_PLAYERS_TODAY`) and the mock `getPlayerBest` are deleted.
 - Cached reads with `'use cache'` plus `cacheTag('games')` and `cacheTag('scores')`.
 - `best` derived from `max(scores.score)`. `plays` is an integer column, shown formatted (`1.2K`), and goes up by 1 on each saved score.
@@ -148,6 +148,7 @@ Before writing code, read `node_modules/next/dist/docs/` for `'use cache'`, `cac
 - [ ] `submit_score` rejects an unknown game id, a player like `ab` or `TOO_LONG_NAME1`, and a score of `-1` or `10000000`.
 - [ ] `/games` shows only ASTEROIDS. Selecting ARCADE, PUZZLE or VERSUS shows the existing empty state.
 - [ ] `/games/block-buster`, `/games/drop`, `/games/rocks` and any unknown id, on both `/games/[id]` and `/games/[id]/play`, return status 404 on the very first request (`next start`, one `curl` per id, no repeats).
+- [ ] In `next dev`, loading every route (`/`, `/games`, `/games/asteroids`, `/games/asteroids/play`, `/hall-of-fame`, `/about`, `/login`) prints no `instant-shell-url-data` error in the terminal and shows no Instant Navigation insight in the dev overlay.
 - [ ] The home "GAMES AVAILABLE NOW" rail shows only ASTEROIDS, and the stat shows `1 GAMES`.
 - [ ] With no scores, `/games/asteroids` shows best `0`, plays `0` and an empty-state message in "TOP SCORES".
 - [ ] With no scores, `/hall-of-fame` shows an empty-state message instead of an empty podium and table.
@@ -189,6 +190,9 @@ Before writing code, read `node_modules/next/dist/docs/` for `'use cache'`, `cac
 - **Yes:** player name rule `^[A-Z0-9_]{1,10}$`. Matches the current initials input (uppercase, max 10) and blocks markup.
 - **No:** Auth in this spec. It needs its own spec; scores stay forgeable until then.
 - **No:** rewriting the home marketing copy. It is copy, not data, and belongs to a content pass.
+- **Yes:** read `params` inside `<Suspense>` on both `[id]` pages (`GameDetail` and `Player` inner components, with `app/_components/page-loading.tsx` as the fallback). With Partial Prefetching on, Next 16.4 reports an Instant Navigation insight in `next dev` when `await params` sits at the top of the page, because it ties the App Shell to one id. The docs recommend Suspense for it; the user hit this error in the dev overlay and terminal.
+- **No:** `export const instant = false` to silence that insight. It opts the route out of validation instead of fixing it, and the project wants instant navigations.
+- **Yes:** keep `ensureStatic = "navigation"` together with the Suspense boundary. Checked with `next start`: unknown ids still answer 404 on the first request, because the complete page is built before the response.
 - **Yes:** `ensureStatic = "navigation"` on the two `[id]` pages. The project has `partialPrefetching: true`, so an id missing from `generateStaticParams` first gets the App Shell with status 200 and `notFound()` only shows later (a soft 404). `'navigation'` makes Next wait for the complete page, so the 404 status is right on the first request.
 - **No:** `dynamicParams = false` for the same problem. The docs say it is not available with Cache Components.
 - **No:** a Proxy check on the slug. Heavier than one line of route config, and it would duplicate the catalog lookup outside the page.
