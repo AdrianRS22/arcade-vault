@@ -2,6 +2,9 @@ import { notFound } from "next/navigation";
 import { GamePlayer } from "@/app/_components/game-player";
 import { getGameById, getGames } from "@/app/data/games";
 
+// See app/games/[id]/page.tsx: unknown ids must return 404 on the first request.
+export const ensureStatic = "navigation";
+
 export async function generateStaticParams() {
   const games = await getGames();
   return games.map((game) => ({ id: game.id }));

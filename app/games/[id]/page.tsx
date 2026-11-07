@@ -1,7 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getGameById, getGames } from "@/app/data/games";
+import { formatPlays, getGameById, getGames } from "@/app/data/games";
 import { getLeaderboard } from "@/app/data/scores";
+
+// Unknown ids must answer 404 on the very first request. With Partial
+// Prefetching, an unlisted param otherwise gets the App Shell (status 200)
+// first. 'navigation' makes Next wait for the complete static page instead.
+export const ensureStatic = "navigation";
 
 export async function generateStaticParams() {
   const games = await getGames();
@@ -35,7 +40,7 @@ export default async function GameDetailPage({
           <div className="stat-strip">
             <div>
               <div className="l">Plays</div>
-              <div className="v">{game.plays}</div>
+              <div className="v">{formatPlays(game.plays)}</div>
             </div>
             <div>
               <div className="l">Global best</div>

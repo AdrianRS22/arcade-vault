@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { CATEGORIES, type Game } from "@/app/data/games";
+import { CATEGORIES } from "@/app/data/categories";
+import type { Game } from "@/app/data/games";
 import { GameCard } from "./game-card";
 
 export function LibraryBrowser({ games }: { games: Game[] }) {
