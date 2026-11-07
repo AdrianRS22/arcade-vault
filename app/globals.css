@@ -1041,20 +1041,22 @@ a {
   color: var(--cyan);
   text-shadow: 0 0 6px rgba(0, 245, 255, 0.5);
 }
-.hud-stat.lives .v {
+.hud-stat.magenta .v {
   color: var(--magenta);
   text-shadow: 0 0 6px rgba(255, 0, 110, 0.5);
 }
-.hud-stat.level .v {
+.hud-stat.yellow .v {
   color: var(--yellow);
   text-shadow: 0 0 6px rgba(245, 255, 0, 0.5);
 }
-.hud-stat.power {
-  min-width: 150px;
-}
-.hud-stat.power .v {
+.hud-stat.green .v {
   color: var(--green);
   text-shadow: 0 0 6px rgba(0, 255, 136, 0.5);
+}
+.hud-stat.power-up {
+  min-width: 150px;
+}
+.hud-stat.power-up .v {
   font-size: 12px;
   line-height: 16px;
   white-space: pre;
