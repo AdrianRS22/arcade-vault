@@ -1,3 +1,5 @@
+import type { GameCallbacks, GameEngine } from "../types";
+
 export type AsteroidsState = "playing" | "dead" | "gameover";
 
 export type AsteroidsSnapshot = {
@@ -9,20 +11,6 @@ export type AsteroidsSnapshot = {
   state: AsteroidsState;
 };
 
-export type AsteroidsCallbacks = {
-  /** Called only when a snapshot field changes, never every frame. */
-  onChange: (snapshot: AsteroidsSnapshot) => void;
-  /** Called once per game over. */
-  onGameOver: (finalScore: number) => void;
-};
+export type AsteroidsCallbacks = GameCallbacks<AsteroidsSnapshot>;
 
-export type AsteroidsGame = {
-  pause(): void;
-  resume(): void;
-  /** Forces game over with the current score. */
-  end(): void;
-  /** Starts a fresh game (score 0, 3 lives, level 1). */
-  restart(): void;
-  /** Cancels the animation frame and removes every listener. */
-  destroy(): void;
-};
+export type AsteroidsGame = GameEngine;

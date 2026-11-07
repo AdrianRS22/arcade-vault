@@ -3,21 +3,14 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Game } from "@/app/data/games";
-import type { AsteroidsSnapshot } from "@/lib/games/asteroids/types";
-import {
-  AsteroidsCanvas,
-  type AsteroidsHandle,
-} from "./games/asteroids-canvas";
+import { registry, type AnyGameDefinition } from "@/lib/games/registry";
+import type { BaseSnapshot } from "@/lib/games/types";
+import { GameCanvas, type GameHandle } from "./games/game-canvas";
 import { saveScore } from "@/app/games/[id]/play/actions";
 import { useSession } from "./session-provider";
 
-const CONTROLS: { keys: string[]; action: string }[] = [
-  { keys: ["←", "→"], action: "Rotate" },
-  { keys: ["↑"], action: "Thrust" },
-  { keys: ["Space"], action: "Shoot" },
-  { keys: ["B"], action: "Nova bomb" },
-  { keys: ["P", "Esc"], action: "Pause" },
-];
+// Every game shares the platform's pause; games only list their own keys.
+const PAUSE_CONTROL = { keys: ["P", "Esc"], action: "Pause" };
 
 type SaveState =
   | { status: "idle" }
@@ -25,17 +18,65 @@ type SaveState =
   | { status: "saved"; rank: number }
   | { status: "error"; message: string };
 
-export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
+type PlayerProps = { game: Pick<Game, "id" | "title"> };
+
+/** Plays the game registered under `game.id`, or says it is not playable yet. */
+export function GamePlayer({ game }: PlayerProps) {
+  const definition = registry[game.id];
+  if (!definition) return <NotPlayable game={game} />;
+  return <PlayableGame game={game} definition={definition} />;
+}
+
+function NotPlayable({ game }: PlayerProps) {
+  return (
+    <div className="av-player fade-in">
+      <div className="crt">
+        <div className="crt-screen">
+          <div className="crt-content flex-col gap-3 px-6">
+            <div className="pixel neon-magenta text-[22px]">
+              NOT PLAYABLE YET
+            </div>
+            <p className="mono max-w-[44ch] text-[12px] leading-relaxed tracking-[0.04em] text-ink-dim">
+              {game.title} is in the vault, but its game is not built yet. Pick
+              another game or check back soon.
+            </p>
+            <div className="flex gap-2.5">
+              <Link href={`/games/${game.id}`} className="btn ghost">
+                EXIT
+              </Link>
+              <Link href="/games" className="btn">
+                BROWSE GAMES
+              </Link>
+            </div>
+          </div>
+        </div>
+        <div className="crt-bottom">
+          <span className="led">NO SIGNAL</span>
+          <span>{game.title} · CRT-83 · 60 HZ</span>
+          <span>LOAD · 0MB</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function slug(label: string): string {
+  return label.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
+function PlayableGame({
+  game,
+  definition,
+}: PlayerProps & { definition: AnyGameDefinition }) {
   const { user } = useSession();
-  const engineRef = useRef<AsteroidsHandle>(null);
+  const engineRef = useRef<GameHandle>(null);
   // Bumped on every restart so a save that finishes late is ignored.
   const runRef = useRef(0);
 
-  const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
-  const [level, setLevel] = useState(1);
-  const [triple, setTriple] = useState(0);
-  const [nova, setNova] = useState(0);
+  const [snapshot, setSnapshot] = useState<BaseSnapshot>(
+    definition.initialSnapshot,
+  );
+  const score = snapshot.score;
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
   const [name, setName] = useState(user ? user.name : "GUEST");
@@ -76,16 +117,10 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
     };
   }, [over]);
 
-  const handleChange = useCallback((s: AsteroidsSnapshot) => {
-    setScore(s.score);
-    setLives(s.lives);
-    setLevel(s.level);
-    setTriple(s.tripleTimer);
-    setNova(s.novaBombs);
-  }, []);
+  const handleChange = useCallback((s: BaseSnapshot) => setSnapshot(s), []);
 
   const handleGameOver = useCallback((finalScore: number) => {
-    setScore(finalScore);
+    setSnapshot((s) => ({ ...s, score: finalScore }));
     setPaused(false);
     setOver(true);
   }, []);
@@ -96,11 +131,7 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
   };
 
   const restart = () => {
-    setScore(0);
-    setLives(3);
-    setLevel(1);
-    setTriple(0);
-    setNova(0);
+    setSnapshot(definition.initialSnapshot);
     setPaused(false);
     setOver(false);
     runRef.current += 1;
@@ -128,12 +159,7 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
     if (run === runRef.current) setSave(next);
   };
 
-  const powerText = [
-    triple > 0 ? `TRIPLE ${triple}s` : null,
-    nova > 0 ? "NOVA [B]" : null,
-  ]
-    .filter(Boolean)
-    .join("  ");
+  const controls = [...definition.controls, PAUSE_CONTROL];
 
   return (
     <div className="av-player fade-in">
@@ -147,18 +173,15 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
             <div className="l">Score</div>
             <div className="v">{score.toLocaleString("en-US")}</div>
           </div>
-          <div className="hud-stat lives">
-            <div className="l">Lives</div>
-            <div className="v">{"♥ ".repeat(lives).trim() || "—"}</div>
-          </div>
-          <div className="hud-stat level">
-            <div className="l">Level</div>
-            <div className="v">{String(level).padStart(2, "0")}</div>
-          </div>
-          <div className="hud-stat power">
-            <div className="l">Power-up</div>
-            <div className="v">{powerText || "—"}</div>
-          </div>
+          {definition.hud(snapshot).map((stat) => (
+            <div
+              key={stat.label}
+              className={`hud-stat ${slug(stat.label)} ${stat.variant ?? "cyan"}`}
+            >
+              <div className="l">{stat.label}</div>
+              <div className="v">{stat.value}</div>
+            </div>
+          ))}
         </div>
         <div className="hud-actions">
           <button
@@ -179,8 +202,10 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
 
       <div className="crt">
         <div className="crt-screen">
-          <AsteroidsCanvas
+          <GameCanvas
             ref={engineRef}
+            load={definition.load}
+            ariaLabel={definition.ariaLabel}
             onChange={handleChange}
             onGameOver={handleGameOver}
           />
@@ -203,7 +228,7 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
       </div>
 
       <ul className="controls-legend" aria-label="Keyboard controls">
-        {CONTROLS.map((c) => (
+        {controls.map((c) => (
           <li key={c.action}>
             <span className="keys">
               {c.keys.map((k) => (

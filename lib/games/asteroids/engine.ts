@@ -22,7 +22,7 @@ import {
   rand,
   randInt,
 } from "./entities";
-import { createInput } from "./input";
+import { createInput } from "../shared/input";
 import type {
   AsteroidsCallbacks,
   AsteroidsGame,
