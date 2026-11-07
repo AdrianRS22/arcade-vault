@@ -11,7 +11,7 @@ import {
 import { randomPiece, randomPowerup, rotateCW } from "./pieces";
 import type { Piece } from "./types";
 
-/** `ROWS × COLS` matrix: 0 is empty, 1..8 pieces, 9 wild. Power-ups never stay. */
+/** `ROWS × COLS` matrix: 0 is empty, 1..7 pieces, 9 wild. Power-ups never stay. */
 export type Board = number[][];
 
 /** Pure game state. Everything else (loop, input, drawing) lives around it. */

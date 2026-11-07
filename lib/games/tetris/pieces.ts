@@ -1,7 +1,7 @@
 import { COLS, POWERUPS, POWERUP_BASE } from "./constants";
 import type { Piece } from "./types";
 
-/** Piece matrices by board value (1..8). Each cell holds the piece's own value. */
+/** Piece matrices by board value (1..7). Each cell holds the piece's own value. */
 export const PIECES: Readonly<Record<number, readonly (readonly number[])[]>> =
   {
     1: [
@@ -39,14 +39,9 @@ export const PIECES: Readonly<Record<number, readonly (readonly number[])[]>> =
       [7, 7, 7],
       [0, 0, 0],
     ], // L
-    // 8: [
-    //   [8, 8, 8],
-    //   [8, 0, 8],
-    //   [8, 8, 8],
-    // ], // N (nut)
   };
 
-export const PIECE_COUNT = 8;
+export const PIECE_COUNT = 7;
 
 /** Rotates a matrix 90° clockwise. */
 export function rotateCW(shape: readonly (readonly number[])[]): number[][] {

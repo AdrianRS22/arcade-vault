@@ -13,7 +13,7 @@ Unlike Asteroids, it is a falling-block puzzle on a 10×20 board inside a 4:3 CR
 
 `GamePlayer` hard-codes `AsteroidsCanvas`, the HUD stats and the controls legend. Today any catalog row would run Asteroids and save its score under the wrong `game_id`. Tetris is the second real game, so this spec generalizes the player with a registry (see `/new-game` integration contract) before adding the game. After it, adding a game is an engine, a registry entry and a seed migration.
 
-The reference code has more than its README says: eight pieces (an extra "N" nut piece), five power-ups every 5 lines (bomb, lightning, tint, gravity, freeze), a wild block, combo, four skins, a light theme, a start-level selector and local records. The code wins; this spec says which of these are kept.
+The reference code has more than its README says: eight pieces (an extra "N" nut piece, dropped here), five power-ups every 5 lines (bomb, lightning, tint, gravity, freeze), a wild block, combo, four skins, a light theme, a start-level selector and local records. The code wins; this spec says which of these are kept.
 
 ## Scope
 
@@ -22,7 +22,7 @@ The reference code has more than its README says: eight pieces (an extra "N" nut
 - Seed migration `supabase/migrations/<timestamp>_seed_tetris.sql` with the `games` row (`id = 'tetris'`, `title = 'TETRIS'`, `category = 'PUZZLE'`, `cover = 'cover-tetro'`, `color = 'cyan'`, `plays = 0`, `sort_order = 1`).
 - Registry bootstrap: `lib/games/types.ts` (`GameEngine`, `BaseSnapshot`, `GameCallbacks`), `lib/games/shared/input.ts` (moved from `lib/games/asteroids/input.ts`), `lib/games/registry.ts`, `app/_components/games/game-canvas.tsx` (replaces `asteroids-canvas.tsx`) and a generic `GamePlayer`. Asteroids moves onto the registry with identical behavior.
 - "Not playable yet" state in the player for a catalog row with no registry entry.
-- Typed engine in `lib/games/tetris/` (no React, no globals) with: 10×20 board, 7 standard pieces plus the N piece, clockwise rotation with horizontal kicks, soft drop, hard drop, ghost piece, NEXT preview, line clearing, scoring, levels and gravity speed.
+- Typed engine in `lib/games/tetris/` (no React, no globals) with: 10×20 board, the 7 standard pieces, clockwise rotation with horizontal kicks, soft drop, hard drop, ghost piece, NEXT preview, line clearing, scoring, levels and gravity speed.
 - The five power-ups (bomb, lightning, tint, gravity, freeze) and the wild block, with their reference behavior.
 - NEXT preview drawn inside the canvas.
 - Platform HUD: SCORE, LINES, LEVEL and a POWER-UP stat (`FREEZE Ns` while frozen).
@@ -123,7 +123,7 @@ Files in `lib/games/tetris/`:
 
 - `types.ts`: the types above, plus `Piece` (`{ type, shape: number[][], x, y, power? }`).
 - `constants.ts`: values below and `PALETTE`.
-- `pieces.ts`: `PIECES` (index 1..8), `rotateCW`, `randomPiece`, `randomPowerup`.
+- `pieces.ts`: `PIECES` (index 1..7), `rotateCW`, `randomPiece`, `randomPowerup`.
 - `engine.ts`: board, collision, lock, clear, power-ups, scoring, loop, draw and `createTetrisGame`.
 
 Constants kept from the reference (`constants.ts`):
@@ -139,7 +139,7 @@ export const KICKS = [0, -1, 1, -2, 2]; // tried in this order on rotation
 export const POWERUP_EVERY = 5; // lines
 export const POWERUP_POINTS = 50; // multiplied by level
 export const FREEZE_SECONDS = 5;
-export const WILD = 9; // block value; board values 1..8 are pieces, 10..14 are power-ups
+export const WILD = 9; // block value; board values 1..7 are pieces (8 is unused), 10..14 are power-ups
 // dropInterval(level) seconds = max(0.1, 1 - (level - 1) * 0.09)
 ```
 
@@ -161,14 +161,14 @@ Conventions:
 - Controls: `←` `→` move, `↑` or `X` rotate, `↓` soft drop, `Space` hard drop. `P` and `Esc` belong to the platform.
 - `←` `→` `↓` repeat through the browser's key auto-repeat, as in the reference. `↑`, `X` and `Space` act once per press. After `resume()`, held-key repeats are ignored until the key is released (the reference's `resumeGuard`).
 - Game over happens when a newly spawned piece collides at once. There is no win condition.
-- PALETTE mirrors `app/globals.css` tokens: I cyan, O yellow, T purple `#aa00ff`, S green, Z magenta, J a blue, L orange `#ff7700`, N `ink`, wild white. The implementer matches them to the existing tokens and the `cover-tetro` colours. Glow only on the current piece, not on every board cell.
+- PALETTE mirrors `app/globals.css` tokens: I cyan, O yellow, T purple `#aa00ff`, S green, Z magenta, J a blue, L orange `#ff7700`, wild white. The implementer matches them to the existing tokens and the `cover-tetro` colours. Glow only on the current piece, not on every board cell.
 
 ## Implementation plan
 
 1. **Shared types and input.** Create `lib/games/types.ts`. Move `lib/games/asteroids/input.ts` to `lib/games/shared/input.ts` with `git mv`, make the prevented keys configurable (default unchanged), and update Asteroids imports. Add `pressedOrRepeat(code)` to `Input`: true once per `keydown` event, including browser auto-repeat. Check: `npm run lint` and `npm run build` pass; Asteroids plays as before.
 2. **Registry, `GameCanvas` and generic `GamePlayer`.** Create `lib/games/registry.ts` with the `defineGame<S>()` helper and the Asteroids entry (`load`, `initialSnapshot`, `hud`, `controls`, `ariaLabel`). Create `app/_components/games/game-canvas.tsx` (same StrictMode-safe effect, callbacks in a ref, React 19 `ref` prop with `useImperativeHandle`, async load guarded by a `cancelled` flag) and delete `asteroids-canvas.tsx`. `GamePlayer` reads the definition by `game.id` and renders the HUD stats and controls legend from it, appending the Pause row. Pause, `visibilitychange`, END, PLAY AGAIN and the save flow stay unchanged. A game id with no entry shows a "NOT PLAYABLE YET" state with an EXIT link. Use `/frontend-design` for that state. Check: Asteroids HUD, controls, pause, game over and SAVE SCORE behave exactly as before.
 3. **Seed migration.** Write `<timestamp>_seed_tetris.sql`, run `npm run db:push`, then `npm run db:types`. Check with Supabase MCP `execute_sql`: `games` has `asteroids` and `tetris`, and `scores` has no `tetris` rows. Restart the dev server if the cached list does not show it. `/games` lists TETRIS; `/games/tetris/play` shows the "NOT PLAYABLE YET" state.
-4. **Types, constants and pieces.** Create `types.ts`, `constants.ts` and `pieces.ts` in `lib/games/tetris/`: piece matrices (I, O, T, S, Z, J, L, N), `rotateCW`, `randomPiece`, `randomPowerup`, `PALETTE`. Check: `npm run lint` passes; the file imports nothing from React or the DOM.
+4. **Types, constants and pieces.** Create `types.ts`, `constants.ts` and `pieces.ts` in `lib/games/tetris/`: piece matrices (I, O, T, S, Z, J, L), `rotateCW`, `randomPiece`, `randomPowerup`, `PALETTE`. Check: `npm run lint` passes; the file imports nothing from React or the DOM.
 5. **Board logic.** In `engine.ts`, add the pure state: board, `collide`, `tryRotate` with kicks, `merge`, `clearLines` with the wild rule, scoring, level and `dropInterval`, `ghostY`, `spawn` with game-over detection. Check: `npm run build` passes (no loop yet).
 6. **Power-ups.** Add `applyPowerup` for the five effects, the `powerupPending` counter every 5 lines and the freeze timer. Check: `npm run lint` and `npm run build` pass.
 7. **Loop, input and drawing.** Add `createTetrisGame`: rAF loop with the `dt` cap, gravity accumulator, shared input with `pressedOrRepeat`, `draw` (grid, board, ghost at alpha 0.2, current piece, NEXT, freeze tint), HUD-free canvas, `onChange` only on change, `onGameOver` once, `pause`, `resume`, `end`, `restart`, `destroy`. Clamp the score to 9,999,999. Check: `npm run build` passes.
@@ -223,7 +223,8 @@ Before writing code, read `node_modules/next/dist/docs/` for Client Components, 
 - **Yes:** platform HUD and modal; the canvas draws only the game. SCORE, LINES, LEVEL and POWER-UP are HUD stats (user's choice). Combo is not shown.
 - **Yes:** `id = tetris`, title `TETRIS`. User's choice. It is a trade name (see Risks).
 - **Yes:** `PUZZLE`, `cyan`, reuse of `cover-tetro`. User's choice; cyan contrasts with ASTEROIDS (yellow).
-- **Yes:** keep all power-ups, the N piece and the wild block. User's choice; they are in the code even though the README does not mention them. The README is stale.
+- **Yes:** keep all power-ups and the wild block. User's choice; they are in the code even though the README does not mention them. The README is stale.
+- **No:** the N (nut) piece of the reference. User's choice during implementation: it is an ugly extra piece. Block value 8 stays unused so `WILD = 9` and the power-up values (10..14) keep the reference numbering.
 - **No:** skins, theme toggle and start-level selector (user's choice). The platform has its own theme and pause menu; one neon look fits the CRT.
 - **No:** combo and local records. The platform stores the score in Supabase and shows the ranking; local records would duplicate it.
 - **Yes:** NEXT drawn inside the canvas with a 4:3 logical field. It uses the CRT's free side space and needs no second canvas or a custom HUD widget.

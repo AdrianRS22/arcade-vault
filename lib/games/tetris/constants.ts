@@ -12,7 +12,8 @@ export const POWERUP_POINTS = 50; // multiplied by level
 export const FREEZE_SECONDS = 5;
 export const MAX_SCORE = 9_999_999; // database check on `scores.score`
 
-export const WILD = 9; // block value; board values 1..8 are pieces, 10..14 are power-ups
+// Block values: 1..7 are pieces, 8 is unused (the dropped N piece), 9 is wild, 10..14 are power-ups.
+export const WILD = 9;
 export const POWERUP_BASE = 10;
 
 /** Power-up pieces in board-value order: `POWERUP_BASE + index`. */
@@ -53,7 +54,7 @@ export const PALETTE: readonly (string | null)[] = [
   "#ff006e", // 5 Z: --magenta
   "#2979ff", // 6 J: blue
   "#ff7700", // 7 L: orange (cover-tetro)
-  "#e6e9ff", // 8 N: --ink
+  null, // 8 unused
   "#ffffff", // 9 wild
   "#ff6d00", // 10 bomb
   "#ffea00", // 11 lightning

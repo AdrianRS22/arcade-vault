@@ -15,7 +15,7 @@ export type TetrisCallbacks = GameCallbacks<TetrisSnapshot>;
 export type PowerupName = "bomb" | "lightning" | "tint" | "gravity" | "freeze";
 
 export type Piece = {
-  /** Board value: 1..8 are pieces, 10..14 are power-ups. */
+  /** Board value: 1..7 are pieces, 9 is wild, 10..14 are power-ups. */
   type: number;
   shape: number[][];
   x: number;
