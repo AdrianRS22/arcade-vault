@@ -8,6 +8,7 @@ import {
   AsteroidsCanvas,
   type AsteroidsHandle,
 } from "./games/asteroids-canvas";
+import { saveScore } from "@/app/games/[id]/play/actions";
 import { useSession } from "./session-provider";
 
 const CONTROLS: { keys: string[]; action: string }[] = [
@@ -18,9 +19,17 @@ const CONTROLS: { keys: string[]; action: string }[] = [
   { keys: ["P", "Esc"], action: "Pause" },
 ];
 
+type SaveState =
+  | { status: "idle" }
+  | { status: "saving" }
+  | { status: "saved"; rank: number }
+  | { status: "error"; message: string };
+
 export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
   const { user } = useSession();
   const engineRef = useRef<AsteroidsHandle>(null);
+  // Bumped on every restart so a save that finishes late is ignored.
+  const runRef = useRef(0);
 
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
@@ -30,7 +39,7 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
   const [name, setName] = useState(user ? user.name : "GUEST");
-  const [saved, setSaved] = useState(false);
+  const [save, setSave] = useState<SaveState>({ status: "idle" });
 
   // The engine follows the `paused` state.
   useEffect(() => {
@@ -94,8 +103,29 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
     setNova(0);
     setPaused(false);
     setOver(false);
-    setSaved(false);
+    runRef.current += 1;
+    setSave({ status: "idle" });
     engineRef.current?.restart();
+  };
+
+  // One save per game over: ignored while saving and once it has succeeded.
+  const handleSave = async () => {
+    if (save.status === "saving" || save.status === "saved") return;
+    const run = runRef.current;
+    setSave({ status: "saving" });
+    let next: SaveState;
+    try {
+      const result = await saveScore(game.id, name, score);
+      next = result.ok
+        ? { status: "saved", rank: result.rank }
+        : { status: "error", message: result.error };
+    } catch {
+      next = {
+        status: "error",
+        message: "Could not save your score. Try again.",
+      };
+    }
+    if (run === runRef.current) setSave(next);
   };
 
   const powerText = [
@@ -191,26 +221,44 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
             <h2>GAME OVER</h2>
             <div className="final-label">FINAL SCORE</div>
             <div className="final">{score.toLocaleString("en-US")}</div>
-            {!saved ? (
-              <div className="input-row">
-                <input
-                  value={name}
-                  onChange={(e) =>
-                    setName(e.target.value.toUpperCase().slice(0, 10))
-                  }
-                  placeholder="YOUR INITIALS"
-                  aria-label="Your initials"
-                />
-                <button
-                  type="button"
-                  className="btn yellow"
-                  onClick={() => setSaved(true)}
-                >
-                  SAVE SCORE
-                </button>
-              </div>
+            {save.status === "saved" ? (
+              <>
+                <div className="toast-saved" role="status">
+                  ▸ SAVED — RANK #{save.rank}_
+                </div>
+                <div className="mt-3">
+                  <Link href="/hall-of-fame" className="lb-link">
+                    SEE THE HALL OF FAME →
+                  </Link>
+                </div>
+              </>
             ) : (
-              <div className="toast-saved">▸ SCORE SAVED_</div>
+              <>
+                <div className="input-row">
+                  <input
+                    value={name}
+                    onChange={(e) =>
+                      setName(e.target.value.toUpperCase().slice(0, 10))
+                    }
+                    placeholder="YOUR INITIALS"
+                    aria-label="Your initials"
+                    disabled={save.status === "saving"}
+                  />
+                  <button
+                    type="button"
+                    className="btn yellow"
+                    onClick={handleSave}
+                    disabled={save.status === "saving"}
+                  >
+                    {save.status === "saving" ? "SAVING…" : "SAVE SCORE"}
+                  </button>
+                </div>
+                {save.status === "error" && (
+                  <p className="save-error" role="alert">
+                    {save.message}
+                  </p>
+                )}
+              </>
             )}
             <div className="actions">
               <button type="button" className="btn" onClick={restart}>
