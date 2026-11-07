@@ -18,6 +18,7 @@ SPEC 05 left Supabase connected with no schema. SPEC 06 delivered the first real
 - Regenerated `types/supabase.ts`.
 - `lib/supabase/public.ts`: cookie-less client for cached reads.
 - `app/data/categories.ts`: `CATEGORIES` moved out of `app/data/games.ts` so Client Components can import it. `games.ts` now uses server-only APIs (`next/cache`, Supabase).
+- `app/_components/empty-board.tsx` and the `.empty-board` class in `app/globals.css`: one shared empty state for every score board (title, one sentence, optional action).
 - `export const ensureStatic = "navigation"` in `app/games/[id]/page.tsx` and `app/games/[id]/play/page.tsx`, so unknown game ids answer 404 on the first request.
 - `app/data/games.ts`, `app/data/scores.ts` and `app/data/activity.ts` read from Supabase. Every hard-coded array (`GAMES`, `ROWS`, `RECENT_SCORES`, `TOP_PLAYERS_TODAY`) and the mock `getPlayerBest` are deleted.
 - Cached reads with `'use cache'` plus `cacheTag('games')` and `cacheTag('scores')`.
@@ -125,12 +126,12 @@ export async function saveScore(
 2. Write the Asteroids seed migration and push it. Check with MCP `execute_sql`: `games` has 1 row and `scores` has 0.
 3. Create `lib/supabase/public.ts`: `createPublicClient()` with `@supabase/supabase-js` `createClient<Database>`, values from `lib/supabase/env.ts`, no cookies, no session persistence. Safe inside `'use cache'`.
 4. Rewrite `app/data/games.ts` on `games_with_best` (ordered by `sort_order`), cached with `cacheTag('games')` and `cacheTag('scores')`. Delete `GAMES`. Add `formatPlays` and use it in `app/games/[id]/page.tsx`. Move `CATEGORIES` to `app/data/categories.ts` and update the import in `app/_components/library-browser.tsx` (a Client Component cannot import `games.ts` any more). Add `export const ensureStatic = "navigation"` to `app/games/[id]/page.tsx` and `app/games/[id]/play/page.tsx`. Check: `/games` shows only ASTEROIDS and the other category chips show the existing empty state. `/games/block-buster` returns 404 on the first request.
-5. Rewrite `app/data/scores.ts` on `player_bests` (cached, `cacheTag('scores')`), with `date` formatted `DD/MM/YYYY`. Delete `ROWS` and `getPlayerBest`. Add `getPlayerBests(player)` (not cached). Add empty states to the detail "TOP SCORES" block and the Hall of Fame podium and table.
+5. Rewrite `app/data/scores.ts` on `player_bests` (cached, `cacheTag('scores')`), with `date` formatted `DD/MM/YYYY`. Delete `ROWS` and `getPlayerBest`. Add `getPlayerBests(player)` (not cached). Create `app/_components/empty-board.tsx` and use it for the detail "TOP SCORES" block and the Hall of Fame podium and table. Because `getPlayerBest` is gone, `app/hall-of-fame/page.tsx` stops loading player bests now, and `hall-of-fame-board.tsx` loses its `playerBests` prop and the "YOUR BEST" row until step 10 brings it back with real data.
 6. Rewrite `app/data/activity.ts` on `scores` joined with `games` (latest scores) and on `top_players_today`. Cache with `cacheTag('scores')` and a short `cacheLife` so `ago` and "today" do not go stale for hours. Delete both arrays. Add empty states to "LATEST SCORES" and "TOP PLAYERS · TODAY" on the home.
 7. Remove the fake arena from `app/_components/game-player.tsx`: the random score interval, the `.game-arena` markup, the `isReal` flag and its branches. The player always mounts `AsteroidsCanvas`. Check: `/games/asteroids/play` plays exactly as in SPEC 06.
 8. Create `app/games/[id]/play/actions.ts` with `saveScore`. It normalizes the player (trim, uppercase, max 10), validates it against `^[A-Z0-9_]{1,10}$` and the score range, calls `submit_score` with the server client, invalidates the `games` and `scores` tags and returns the result shape. It logs the real error server-side and returns a generic message.
 9. Wire the GAME OVER modal: SAVE SCORE calls `saveScore` with the idle, saving, saved-with-rank and error-retry states, plus a link to `/hall-of-fame`. Use the `/frontend-design` skill for the new states.
-10. Hall of Fame: `app/hall-of-fame/page.tsx` stops loading player bests. `app/_components/hall-of-fame-board.tsx` calls a Server Action `getMyBests(user.name)` when a user is signed in and renders "YOUR BEST IN …" from it, hidden when there is no entry. Use the `/frontend-design` skill for the empty states from steps 5, 6 and 10.
+10. Hall of Fame: `app/_components/hall-of-fame-board.tsx` (which lost its "YOUR BEST" row in step 5) calls a Server Action `getMyBests(user.name)` when a user is signed in and renders "YOUR BEST IN …" from it, hidden when there is no entry. Use the `/frontend-design` skill for the empty states from steps 5, 6 and 10.
 
 Before writing code, read `node_modules/next/dist/docs/` for `'use cache'`, `cacheTag`, `cacheLife`, `updateTag` / `revalidateTag`, Server Actions and `generateStaticParams` under `cacheComponents`.
 
@@ -188,6 +189,9 @@ Before writing code, read `node_modules/next/dist/docs/` for `'use cache'`, `cac
 - **No:** `dynamicParams = false` for the same problem. The docs say it is not available with Cache Components.
 - **No:** a Proxy check on the slug. Heavier than one line of route config, and it would duplicate the catalog lookup outside the page.
 - **Yes:** move `CATEGORIES` to `app/data/categories.ts`. `games.ts` imports `cacheTag` and the Supabase client, so a Client Component that imports a value from it breaks the build.
+- **Yes:** one shared `EmptyBoard` component, styled with the existing neon tokens and the `_` cursor the home already uses. Three boards need the same message pattern; copy says what is missing and what to do next.
+- **Yes:** drop the "YOUR BEST" row between step 5 and step 10. Its only data source (`getPlayerBest`) is deleted in step 5, and a fake value there would break the "no mocks" goal.
+- **Yes:** Hall of Fame asks for the top 12 per game (`getLeaderboard(g.id, 12)`), matching the scope. The old mock page loaded all 12 rows without a limit.
 
 ## Risks
 
