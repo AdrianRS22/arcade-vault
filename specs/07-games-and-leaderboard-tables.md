@@ -38,7 +38,7 @@ SPEC 05 left Supabase connected with no schema. SPEC 06 delivered the first real
 - Anti-cheat, server-verified scores and rate limiting.
 - New real games (each one gets its own spec and its own row in `games`).
 - Redirects for the removed game URLs (`/games/block-buster` and the others return 404).
-- Removing the now-unused `cover-*` CSS classes from `globals.css`.
+- Removing the now-unused `cover-*` classes and the fake-arena classes (`.game-arena`, `.enemy`, `.player-ship`, `.grid-floor`) from `globals.css`.
 - Rewriting the home marketing copy ("THOUSANDS OF PLAYS", "EVERY DAY", "GLOBAL RANKING").
 - Admin UI to edit games.
 - Pagination beyond top 12, per-period leaderboards (weekly, monthly) and realtime updates.
@@ -128,7 +128,7 @@ export async function saveScore(
 4. Rewrite `app/data/games.ts` on `games_with_best` (ordered by `sort_order`), cached with `cacheTag('games')` and `cacheTag('scores')`. Delete `GAMES`. Add `formatPlays` and use it in `app/games/[id]/page.tsx`. Move `CATEGORIES` to `app/data/categories.ts` and update the import in `app/_components/library-browser.tsx` (a Client Component cannot import `games.ts` any more). Add `export const ensureStatic = "navigation"` to `app/games/[id]/page.tsx` and `app/games/[id]/play/page.tsx`. Check: `/games` shows only ASTEROIDS and the other category chips show the existing empty state. `/games/block-buster` returns 404 on the first request.
 5. Rewrite `app/data/scores.ts` on `player_bests` (cached, `cacheTag('scores')`), with `date` formatted `DD/MM/YYYY`. Delete `ROWS` and `getPlayerBest`. Add `getPlayerBests(player)` (not cached). Create `app/_components/empty-board.tsx` and use it for the detail "TOP SCORES" block and the Hall of Fame podium and table. Because `getPlayerBest` is gone, `app/hall-of-fame/page.tsx` stops loading player bests now, and `hall-of-fame-board.tsx` loses its `playerBests` prop and the "YOUR BEST" row until step 10 brings it back with real data.
 6. Rewrite `app/data/activity.ts` on `scores` joined with `games` (latest scores) and on `top_players_today`. Cache with `cacheTag('scores')` and `cacheLife('minutes')` (revalidate 1 min, expire 1 h) so `ago` and "today" do not go stale for hours. Never go below that: a profile with `expire` under 5 minutes becomes a dynamic hole and breaks the build on the home page, which has no `Suspense`. Delete both arrays. Add empty states with `EmptyBoard` to "LATEST SCORES" (with a PLAY button for the first game) and "TOP PLAYERS · TODAY" on the home.
-7. Remove the fake arena from `app/_components/game-player.tsx`: the random score interval, the `.game-arena` markup, the `isReal` flag and its branches. The player always mounts `AsteroidsCanvas`. Check: `/games/asteroids/play` plays exactly as in SPEC 06.
+7. Remove the fake arena from `app/_components/game-player.tsx`: the random score interval, the `.game-arena` markup, the `isReal` flag and its branches. The player always mounts `AsteroidsCanvas`, and the Power-up stat, the controls legend and the single pause text are always shown. The `realLevel` state becomes `level`, because the score-derived level for fake games is gone. Check: `/games/asteroids/play` plays exactly as in SPEC 06.
 8. Create `app/games/[id]/play/actions.ts` with `saveScore`. It normalizes the player (trim, uppercase, max 10), validates it against `^[A-Z0-9_]{1,10}$` and the score range, calls `submit_score` with the server client, invalidates the `games` and `scores` tags and returns the result shape. It logs the real error server-side and returns a generic message.
 9. Wire the GAME OVER modal: SAVE SCORE calls `saveScore` with the idle, saving, saved-with-rank and error-retry states, plus a link to `/hall-of-fame`. Use the `/frontend-design` skill for the new states.
 10. Hall of Fame: `app/_components/hall-of-fame-board.tsx` (which lost its "YOUR BEST" row in step 5) calls a Server Action `getMyBests(user.name)` when a user is signed in and renders "YOUR BEST IN …" from it, hidden when there is no entry. Use the `/frontend-design` skill for the empty states from steps 5, 6 and 10.
@@ -168,6 +168,7 @@ Before writing code, read `node_modules/next/dist/docs/` for `'use cache'`, `cac
 - **No:** seeding the seven fake games or the 96 fake scores. Fake data hides what is real.
 - **Yes:** no seeded scores; leaderboards start empty with empty states. The first real save becomes rank #1.
 - **Yes:** remove the fake arena from `GamePlayer`. No fake game can reach it any more; keeping it would be dead code.
+- **No:** deleting the fake-arena CSS (`.game-arena`, `.enemy`, `.player-ship`, `.grid-floor`) in this spec. It is unused but harmless, and it belongs to the same cosmetic cleanup as the `cover-*` classes.
 - **No:** a `playable` column. Every row in `games` is a real game, so the flag would always be true.
 - **No:** redirects for removed game URLs. Mock catalog, no real users or links.
 - **Yes:** writes only through `submit_score` (`security definer`). The insert and `plays + 1` stay atomic, and `anon` gets no table write permission.
