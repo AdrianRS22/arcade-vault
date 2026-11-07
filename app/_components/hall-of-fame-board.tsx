@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { Game } from "@/app/data/games";
 import type { ScoreEntry } from "@/app/data/scores";
+import { getMyBests } from "@/app/hall-of-fame/actions";
 import { EmptyBoard } from "./empty-board";
+import { useSession } from "./session-provider";
 
 type Props = {
   games: Game[];
@@ -15,11 +17,36 @@ const pad = (n: number) => String(n).padStart(2, "0");
 const fmt = (n: number) => n.toLocaleString("en-US");
 
 export function HallOfFameBoard({ games, leaderboards }: Props) {
+  const { user } = useSession();
   const [tab, setTab] = useState(games[0].id);
+  // Tagged with the player it was loaded for, so a result for a previous
+  // session is never shown under another name.
+  const [bests, setBests] = useState<{
+    player: string;
+    data: Record<string, ScoreEntry>;
+  } | null>(null);
+
+  const player = user?.name;
+  useEffect(() => {
+    if (!player) return;
+    let cancelled = false;
+    getMyBests(player)
+      .then((data) => {
+        if (!cancelled) setBests({ player, data });
+      })
+      .catch(() => {
+        if (!cancelled) setBests({ player, data: {} });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [player]);
 
   const game = games.find((g) => g.id === tab) ?? games[0];
   const rows = leaderboards[game.id] ?? [];
   const [first, second, third] = rows;
+  const mine =
+    user && bests?.player === user.name ? bests.data[game.id] : undefined;
 
   return (
     <div className="av-hall fade-in">
@@ -114,6 +141,22 @@ export function HallOfFameBoard({ games, leaderboards }: Props) {
                 <div className="dt">{r.date}</div>
               </div>
             ))}
+            {user && mine && (
+              <>
+                <div className="tr you-label">▸ YOUR BEST IN {game.title}</div>
+                <div
+                  className="tr you"
+                  style={{ animationDelay: `${rows.length * 50 + 50}ms` }}
+                >
+                  <div className="rk text-yellow">#{pad(mine.rank)}</div>
+                  <div className="pl text-yellow">{user.name}</div>
+                  <div className="sc text-yellow [text-shadow:0_0_6px_rgba(245,255,0,0.5)]">
+                    {fmt(mine.score)}
+                  </div>
+                  <div className="dt">{mine.date}</div>
+                </div>
+              </>
+            )}
           </div>
         </>
       )}
