@@ -29,7 +29,10 @@ Migrations so far:
 !`ls supabase/migrations/ 2>/dev/null || echo "No migrations"`
 
 Generic game registry (bootstrap probe):
-!`(ls lib/games/registry.ts 2>/dev/null || echo "MISSING: lib/games/registry.ts (bootstrap mode)"); (ls app/_components/games/ 2>/dev/null || echo "MISSING: app/_components/games/")`
+!`ls lib/games/registry.ts 2>/dev/null || echo "MISSING: lib/games/registry.ts (bootstrap mode)"`
+
+Shared game components folder:
+!`ls app/_components/games/ 2>/dev/null || echo "MISSING: app/_components/games/"`
 
 ---
 
