@@ -1063,6 +1063,7 @@ a {
 }
 .hud-actions {
   display: flex;
+  flex-wrap: wrap; /* PAUSE, MUTE, END and EXIT do not fit one row at 375px */
   gap: 10px;
 }
 
