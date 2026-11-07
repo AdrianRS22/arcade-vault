@@ -4,6 +4,7 @@ import type { FeatureIconKind } from "./_components/home/feature-icon";
 import { FloatingSilhouettes } from "./_components/home/floating-silhouettes";
 import { MiniCard } from "./_components/home/mini-card";
 import { Reveal } from "./_components/home/reveal";
+import { EmptyBoard } from "./_components/empty-board";
 import { getRecentScores, getTopPlayersToday } from "./data/activity";
 import type { GameColor } from "./data/games";
 import { getGames } from "./data/games";
@@ -183,9 +184,25 @@ export default async function Home() {
               <div className="ac-title pixel">▸ LATEST SCORES</div>
             </div>
             <div className="ticker">
+              {recentScores.length === 0 && (
+                <EmptyBoard
+                  compact
+                  title="NO SCORES YET"
+                  action={
+                    games[0]
+                      ? {
+                          href: `/games/${games[0].id}/play`,
+                          label: `PLAY ${games[0].title}`,
+                        }
+                      : undefined
+                  }
+                >
+                  Every saved score shows up here as soon as a run ends.
+                </EmptyBoard>
+              )}
               {recentScores.map((r, i) => (
                 <div
-                  key={`${r.player}-${r.gameId}`}
+                  key={`${r.player}-${r.gameId}-${i}`}
                   className="tick-row"
                   style={{ animationDelay: `${i * 60}ms` }}
                 >
@@ -212,6 +229,11 @@ export default async function Home() {
               </Link>
             </div>
             <div className="top-list">
+              {topPlayers.length === 0 && (
+                <EmptyBoard compact title="NO SCORES TODAY">
+                  Save a score in the last 24 hours to lead this board.
+                </EmptyBoard>
+              )}
               {topPlayers.map((p) => (
                 <div
                   key={p.rank}
@@ -251,7 +273,9 @@ export default async function Home() {
             <Link href="/login?mode=create" className="btn xl pulse w-full">
               START FREE →
             </Link>
-            <div className="pc-foot">We do not ask for a card. We never will.</div>
+            <div className="pc-foot">
+              We do not ask for a card. We never will.
+            </div>
             <div className="pc-stamp pixel">
               FREE
               <br />

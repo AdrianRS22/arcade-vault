@@ -1,16 +1,34 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getGameById, getGames } from "@/app/data/games";
+import { Suspense } from "react";
+import { EmptyBoard } from "@/app/_components/empty-board";
+import { PageLoading } from "@/app/_components/page-loading";
+import { formatPlays, getGameById, getGames } from "@/app/data/games";
 import { getLeaderboard } from "@/app/data/scores";
+
+// Unknown ids must answer 404 on the very first request. With Partial
+// Prefetching, an unlisted param otherwise gets the App Shell (status 200)
+// first. 'navigation' makes Next wait for the complete static page instead.
+export const ensureStatic = "navigation";
 
 export async function generateStaticParams() {
   const games = await getGames();
   return games.map((game) => ({ id: game.id }));
 }
 
-export default async function GameDetailPage({
+// `params` is URL data: awaiting it at the top would tie the App Shell to one
+// id. The read lives inside <Suspense> so the shell stays generic.
+export default function GameDetailPage({ params }: PageProps<"/games/[id]">) {
+  return (
+    <Suspense fallback={<PageLoading />}>
+      <GameDetail params={params} />
+    </Suspense>
+  );
+}
+
+async function GameDetail({
   params,
-}: PageProps<"/games/[id]">) {
+}: Pick<PageProps<"/games/[id]">, "params">) {
   const { id } = await params;
   const game = await getGameById(id);
   if (!game) notFound();
@@ -35,7 +53,7 @@ export default async function GameDetailPage({
           <div className="stat-strip">
             <div>
               <div className="l">Plays</div>
-              <div className="v">{game.plays}</div>
+              <div className="v">{formatPlays(game.plays)}</div>
             </div>
             <div>
               <div className="l">Global best</div>
@@ -64,24 +82,36 @@ export default async function GameDetailPage({
       <aside>
         <div className="leaderboard">
           <h3>TOP SCORES</h3>
-          {scores.map((r, i) => (
-            <div
-              key={r.player}
-              className={
-                "lb-row" +
-                (i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : "")
-              }
-            >
-              <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
-              <div className="pl">
-                {r.player}
-                <div className="text-[10px] tracking-widest text-ink-faint">
-                  {r.date}
+          {scores.length === 0 ? (
+            <EmptyBoard compact title="NO SCORES YET">
+              Finish a run and save it to take rank&nbsp;#1.
+            </EmptyBoard>
+          ) : (
+            scores.map((r, i) => (
+              <div
+                key={r.player}
+                className={
+                  "lb-row" +
+                  (i === 0
+                    ? " top1"
+                    : i === 1
+                      ? " top2"
+                      : i === 2
+                        ? " top3"
+                        : "")
+                }
+              >
+                <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
+                <div className="pl">
+                  {r.player}
+                  <div className="text-[10px] tracking-widest text-ink-faint">
+                    {r.date}
+                  </div>
                 </div>
+                <div className="sc">{r.score.toLocaleString("en-US")}</div>
               </div>
-              <div className="sc">{r.score.toLocaleString("en-US")}</div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </aside>
     </div>

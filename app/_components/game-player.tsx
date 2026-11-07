@@ -8,6 +8,7 @@ import {
   AsteroidsCanvas,
   type AsteroidsHandle,
 } from "./games/asteroids-canvas";
+import { saveScore } from "@/app/games/[id]/play/actions";
 import { useSession } from "./session-provider";
 
 const CONTROLS: { keys: string[]; action: string }[] = [
@@ -18,45 +19,37 @@ const CONTROLS: { keys: string[]; action: string }[] = [
   { keys: ["P", "Esc"], action: "Pause" },
 ];
 
+type SaveState =
+  | { status: "idle" }
+  | { status: "saving" }
+  | { status: "saved"; rank: number }
+  | { status: "error"; message: string };
+
 export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
   const { user } = useSession();
-  // Only Asteroids has a real engine; every other game keeps the fake arena.
-  const isReal = game.id === "asteroids";
   const engineRef = useRef<AsteroidsHandle>(null);
+  // Bumped on every restart so a save that finishes late is ignored.
+  const runRef = useRef(0);
 
   const [score, setScore] = useState(0);
   const [lives, setLives] = useState(3);
-  const [realLevel, setRealLevel] = useState(1);
+  const [level, setLevel] = useState(1);
   const [triple, setTriple] = useState(0);
   const [nova, setNova] = useState(0);
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
   const [name, setName] = useState(user ? user.name : "GUEST");
-  const [saved, setSaved] = useState(false);
+  const [save, setSave] = useState<SaveState>({ status: "idle" });
 
-  // Fake games: level is derived from the score (one level every 2,500 points).
-  const level = isReal ? realLevel : 1 + Math.floor(score / 2500);
-
-  // Fake games only: random score ticker.
+  // The engine follows the `paused` state.
   useEffect(() => {
-    if (isReal || over || paused) return;
-    const t = setInterval(
-      () => setScore((s) => s + Math.floor(10 + Math.random() * 90)),
-      220,
-    );
-    return () => clearInterval(t);
-  }, [isReal, over, paused]);
-
-  // Real games: the engine follows the `paused` state.
-  useEffect(() => {
-    if (!isReal) return;
     if (paused) engineRef.current?.pause();
     else engineRef.current?.resume();
-  }, [isReal, paused]);
+  }, [paused]);
 
-  // Real games: P / Esc toggle pause, and a hidden tab pauses automatically.
+  // P / Esc toggle pause, and a hidden tab pauses automatically.
   useEffect(() => {
-    if (!isReal || over) return;
+    if (over) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.code !== "KeyP" && e.code !== "Escape") return;
@@ -81,12 +74,12 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
       window.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [isReal, over]);
+  }, [over]);
 
   const handleChange = useCallback((s: AsteroidsSnapshot) => {
     setScore(s.score);
     setLives(s.lives);
-    setRealLevel(s.level);
+    setLevel(s.level);
     setTriple(s.tripleTimer);
     setNova(s.novaBombs);
   }, []);
@@ -98,24 +91,41 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
   }, []);
 
   const end = () => {
-    if (isReal) {
-      setPaused(false);
-      engineRef.current?.end(); // reports through onGameOver
-    } else {
-      setOver(true);
-    }
+    setPaused(false);
+    engineRef.current?.end(); // reports through onGameOver
   };
 
   const restart = () => {
     setScore(0);
     setLives(3);
-    setRealLevel(1);
+    setLevel(1);
     setTriple(0);
     setNova(0);
     setPaused(false);
     setOver(false);
-    setSaved(false);
-    if (isReal) engineRef.current?.restart();
+    runRef.current += 1;
+    setSave({ status: "idle" });
+    engineRef.current?.restart();
+  };
+
+  // One save per game over: ignored while saving and once it has succeeded.
+  const handleSave = async () => {
+    if (save.status === "saving" || save.status === "saved") return;
+    const run = runRef.current;
+    setSave({ status: "saving" });
+    let next: SaveState;
+    try {
+      const result = await saveScore(game.id, name, score);
+      next = result.ok
+        ? { status: "saved", rank: result.rank }
+        : { status: "error", message: result.error };
+    } catch {
+      next = {
+        status: "error",
+        message: "Could not save your score. Try again.",
+      };
+    }
+    if (run === runRef.current) setSave(next);
   };
 
   const powerText = [
@@ -145,12 +155,10 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
             <div className="l">Level</div>
             <div className="v">{String(level).padStart(2, "0")}</div>
           </div>
-          {isReal && (
-            <div className="hud-stat power">
-              <div className="l">Power-up</div>
-              <div className="v">{powerText || "—"}</div>
-            </div>
-          )}
+          <div className="hud-stat power">
+            <div className="l">Power-up</div>
+            <div className="v">{powerText || "—"}</div>
+          </div>
         </div>
         <div className="hud-actions">
           <button
@@ -171,29 +179,17 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
 
       <div className="crt">
         <div className="crt-screen">
-          {isReal ? (
-            <AsteroidsCanvas
-              ref={engineRef}
-              onChange={handleChange}
-              onGameOver={handleGameOver}
-            />
-          ) : (
-            <div className="game-arena">
-              <div className="grid-floor"></div>
-              <div className="enemy e1"></div>
-              <div className="enemy e2"></div>
-              <div className="enemy e3"></div>
-              <div className="player-ship"></div>
-            </div>
-          )}
+          <AsteroidsCanvas
+            ref={engineRef}
+            onChange={handleChange}
+            onGameOver={handleGameOver}
+          />
           {paused && (
             <div className="crt-content z-5 bg-black/60">
               <div>
                 <div className="pixel neon-yellow text-[22px]">PAUSED</div>
                 <div className="mono mt-2.5 text-[11px] tracking-[0.16em] text-ink-dim">
-                  {isReal
-                    ? "PRESS P OR RESUME TO CONTINUE"
-                    : "PRESS RESUME TO CONTINUE"}
+                  PRESS P OR RESUME TO CONTINUE
                 </div>
               </div>
             </div>
@@ -206,20 +202,18 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
         </div>
       </div>
 
-      {isReal && (
-        <ul className="controls-legend" aria-label="Keyboard controls">
-          {CONTROLS.map((c) => (
-            <li key={c.action}>
-              <span className="keys">
-                {c.keys.map((k) => (
-                  <kbd key={k}>{k}</kbd>
-                ))}
-              </span>
-              {c.action}
-            </li>
-          ))}
-        </ul>
-      )}
+      <ul className="controls-legend" aria-label="Keyboard controls">
+        {CONTROLS.map((c) => (
+          <li key={c.action}>
+            <span className="keys">
+              {c.keys.map((k) => (
+                <kbd key={k}>{k}</kbd>
+              ))}
+            </span>
+            {c.action}
+          </li>
+        ))}
+      </ul>
 
       {over && (
         <div className="modal-bd">
@@ -227,26 +221,44 @@ export function GamePlayer({ game }: { game: Pick<Game, "id" | "title"> }) {
             <h2>GAME OVER</h2>
             <div className="final-label">FINAL SCORE</div>
             <div className="final">{score.toLocaleString("en-US")}</div>
-            {!saved ? (
-              <div className="input-row">
-                <input
-                  value={name}
-                  onChange={(e) =>
-                    setName(e.target.value.toUpperCase().slice(0, 10))
-                  }
-                  placeholder="YOUR INITIALS"
-                  aria-label="Your initials"
-                />
-                <button
-                  type="button"
-                  className="btn yellow"
-                  onClick={() => setSaved(true)}
-                >
-                  SAVE SCORE
-                </button>
-              </div>
+            {save.status === "saved" ? (
+              <>
+                <div className="toast-saved" role="status">
+                  ▸ SAVED — RANK #{save.rank}_
+                </div>
+                <div className="mt-3">
+                  <Link href="/hall-of-fame" className="lb-link">
+                    SEE THE HALL OF FAME →
+                  </Link>
+                </div>
+              </>
             ) : (
-              <div className="toast-saved">▸ SCORE SAVED_</div>
+              <>
+                <div className="input-row">
+                  <input
+                    value={name}
+                    onChange={(e) =>
+                      setName(e.target.value.toUpperCase().slice(0, 10))
+                    }
+                    placeholder="YOUR INITIALS"
+                    aria-label="Your initials"
+                    disabled={save.status === "saving"}
+                  />
+                  <button
+                    type="button"
+                    className="btn yellow"
+                    onClick={handleSave}
+                    disabled={save.status === "saving"}
+                  >
+                    {save.status === "saving" ? "SAVING…" : "SAVE SCORE"}
+                  </button>
+                </div>
+                {save.status === "error" && (
+                  <p className="save-error" role="alert">
+                    {save.message}
+                  </p>
+                )}
+              </>
             )}
             <div className="actions">
               <button type="button" className="btn" onClick={restart}>
