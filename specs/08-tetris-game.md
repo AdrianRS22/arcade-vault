@@ -1,6 +1,6 @@
 # SPEC 08 — Tetris game
 
-> **Status:** Draft
+> **Status:** Approved
 > **Depends on:** SPEC 06, SPEC 07
 > **Date:** 2026-11-07
 > **Objective:** Port the vanilla canvas Tetris in `references/started-games/03-tetris/` to a typed engine played at `/games/tetris/play`, with its own leaderboard, and generalize the player with a game registry now that it is the second real game.
