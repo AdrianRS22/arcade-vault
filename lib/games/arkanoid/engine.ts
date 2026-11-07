@@ -1,3 +1,4 @@
+import { createSoundBank } from "../shared/audio";
 import { createInput } from "../shared/input";
 import type { GameEngine } from "../types";
 import {
@@ -331,7 +332,14 @@ export function createArkanoidGame(
 
   const input = createInput({ preventDefault: GAME_KEYS });
   const world = createWorld();
-  const hooks: StepHooks = { onBounce() {}, onBreak() {} }; // sounds: step 6
+  const sounds = createSoundBank({
+    bounce: "/games/arkanoid/sounds/ball-bounce.mp3",
+    break: "/games/arkanoid/sounds/break-sound.mp3",
+  });
+  const hooks: StepHooks = {
+    onBounce: () => sounds.play("bounce"),
+    onBreak: () => sounds.play("break"),
+  };
 
   let sheet: HTMLImageElement | null = null;
   let gameOverSent = false;
@@ -375,19 +383,44 @@ export function createArkanoidGame(
 
     for (const b of world.bricks) {
       if (b.alive)
-        drawSprite(ctx, sheet, `block_${b.color}`, b.x, b.y, BRICKS.w, BRICKS.h);
+        drawSprite(
+          ctx,
+          sheet,
+          `block_${b.color}`,
+          b.x,
+          b.y,
+          BRICKS.w,
+          BRICKS.h,
+        );
     }
 
     for (const e of world.explosions) {
-      const frame = EXPLOSION_FRAMES[e.color][Math.floor(e.t / EXPLOSION_FRAME)];
+      const frame =
+        EXPLOSION_FRAMES[e.color][Math.floor(e.t / EXPLOSION_FRAME)];
       if (frame) drawFrame(ctx, sheet, frame, e.x, e.y, BRICKS.w, BRICKS.h);
     }
 
     // Glow only on the paddle and the ball
     ctx.shadowColor = PALETTE.glow;
     ctx.shadowBlur = 12;
-    drawSprite(ctx, sheet, "paddle", world.paddleX, PADDLE.y, PADDLE.w, PADDLE.h);
-    drawSprite(ctx, sheet, "ball", world.ball.x, world.ball.y, BALL.size, BALL.size);
+    drawSprite(
+      ctx,
+      sheet,
+      "paddle",
+      world.paddleX,
+      PADDLE.y,
+      PADDLE.w,
+      PADDLE.h,
+    );
+    drawSprite(
+      ctx,
+      sheet,
+      "ball",
+      world.ball.x,
+      world.ball.y,
+      BALL.size,
+      BALL.size,
+    );
     ctx.shadowBlur = 0;
 
     if (world.state === "playing" && world.levelIntro > 0) {
@@ -462,11 +495,13 @@ export function createArkanoidGame(
     pause() {
       if (destroyed || paused || world.state === "gameover") return;
       paused = true;
+      sounds.suspend();
       stop();
     },
     resume() {
       if (destroyed || !paused) return;
       paused = false;
+      sounds.resume();
       input.reset();
       start();
     },
@@ -491,6 +526,7 @@ export function createArkanoidGame(
       if (destroyed) return;
       destroyed = true;
       stop();
+      sounds.destroy();
       input.detach();
       canvas.removeEventListener("mousemove", onMouseMove);
     },
