@@ -141,7 +141,7 @@ Before writing code, read `node_modules/next/dist/docs/` for `'use cache'`, `cac
 - [ ] `app/data/*.ts` contain no hard-coded game, score or activity arrays.
 - [ ] `app/_components/game-player.tsx` contains no random score ticker and no `.game-arena` markup.
 - [ ] With the publishable key, `insert`, `update` and `delete` on `games` and `scores` are rejected.
-- [ ] Supabase security advisors report no issue on `games`, `scores`, the three views or `submit_score`.
+- [ ] Supabase security advisors report no issue on `games`, `scores` and the three views. The only warnings on `submit_score` are the expected `SECURITY DEFINER` ones (`anon` and `authenticated` can execute it), which stay until the Auth spec.
 - [ ] `submit_score` rejects an unknown game id, a player like `ab` or `TOO_LONG_NAME1`, and a score of `-1` or `10000000`.
 - [ ] `/games` shows only ASTEROIDS. Selecting ARCADE, PUZZLE or VERSUS shows the existing empty state.
 - [ ] `/games/block-buster`, `/games/drop` and the other removed ids return 404.
