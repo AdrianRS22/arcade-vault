@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { EmptyBoard } from "@/app/_components/empty-board";
 import { formatPlays, getGameById, getGames } from "@/app/data/games";
 import { getLeaderboard } from "@/app/data/scores";
 
@@ -69,24 +70,36 @@ export default async function GameDetailPage({
       <aside>
         <div className="leaderboard">
           <h3>TOP SCORES</h3>
-          {scores.map((r, i) => (
-            <div
-              key={r.player}
-              className={
-                "lb-row" +
-                (i === 0 ? " top1" : i === 1 ? " top2" : i === 2 ? " top3" : "")
-              }
-            >
-              <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
-              <div className="pl">
-                {r.player}
-                <div className="text-[10px] tracking-widest text-ink-faint">
-                  {r.date}
+          {scores.length === 0 ? (
+            <EmptyBoard compact title="NO SCORES YET">
+              Finish a run and save it to take rank&nbsp;#1.
+            </EmptyBoard>
+          ) : (
+            scores.map((r, i) => (
+              <div
+                key={r.player}
+                className={
+                  "lb-row" +
+                  (i === 0
+                    ? " top1"
+                    : i === 1
+                      ? " top2"
+                      : i === 2
+                        ? " top3"
+                        : "")
+                }
+              >
+                <div className="rk">#{String(r.rank).padStart(2, "0")}</div>
+                <div className="pl">
+                  {r.player}
+                  <div className="text-[10px] tracking-widest text-ink-faint">
+                    {r.date}
+                  </div>
                 </div>
+                <div className="sc">{r.score.toLocaleString("en-US")}</div>
               </div>
-              <div className="sc">{r.score.toLocaleString("en-US")}</div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </aside>
     </div>
