@@ -745,14 +745,30 @@ a {
   content: "";
   position: absolute;
   inset: 0;
-  background-image:
-    radial-gradient(circle at 70% 50%, var(--magenta) 0 6px, transparent 7px),
-    linear-gradient(90deg, var(--green) 0 40px, transparent 40px) 20% 50% /
-      200px 12px no-repeat,
-    linear-gradient(90deg, var(--green) 0 12px, transparent 12px)
-      calc(20% + 40px) calc(50% - 12px) / 12px 12px no-repeat,
-    linear-gradient(90deg, var(--green) 0 12px, transparent 12px)
-      calc(20% + 28px) calc(50% - 12px) / 12px 12px no-repeat;
+  /* 12×9 grid of square cells (the cover is 4:3). A layer sized N cells sits
+     at p = offset / (1 - size), so column c = c × 9.0909% and row r = r × 12.5%
+     for a one-cell layer. Snake: head at (7,3), body (7,4)–(7,6) then
+     (2,6)–(7,6); apple at (7,1). */
+  background:
+    /* cell separators, on top so the body reads as segments */
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(100% / 12 - 1px),
+      rgba(0, 0, 0, 0.35) calc(100% / 12 - 1px) calc(100% / 12)
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 calc(100% / 9 - 1px),
+      rgba(0, 0, 0, 0.35) calc(100% / 9 - 1px) calc(100% / 9)
+    ),
+    /* apple */ radial-gradient(circle, #e94f1f 0 52%, transparent 56%) 63.636%
+      12.5% / calc(100% / 12) calc(100% / 9) no-repeat,
+    /* head */ linear-gradient(var(--green), var(--green)) 63.636% 37.5% /
+      calc(100% / 12) calc(100% / 9) no-repeat,
+    /* body: vertical run (7,4)–(7,6) */ linear-gradient(#00b862, #00b862)
+      63.636% 66.667% / calc(100% / 12) calc(100% / 3) no-repeat,
+    /* body: horizontal run (2,6)–(7,6) */ linear-gradient(#00b862, #00b862)
+      33.333% 75% / 50% calc(100% / 9) no-repeat;
   filter: drop-shadow(0 0 6px rgba(0, 255, 136, 0.6));
 }
 
