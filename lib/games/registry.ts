@@ -1,5 +1,6 @@
 import type { ArkanoidSnapshot } from "./arkanoid/types";
 import type { AsteroidsSnapshot } from "./asteroids/types";
+import type { SnakeSnapshot } from "./snake/types";
 import type { TetrisSnapshot } from "./tetris/types";
 import type { BaseSnapshot, GameCallbacks, GameEngine } from "./types";
 
@@ -140,9 +141,42 @@ const arkanoid = defineGame<ArkanoidSnapshot>({
   sound: true,
 });
 
+const snake = defineGame<SnakeSnapshot>({
+  load: async () => {
+    const { createSnakeGame } = await import("./snake/engine");
+    return { create: createSnakeGame };
+  },
+  initialSnapshot: {
+    score: 0,
+    length: 3,
+    level: 1,
+    bonusSeconds: 0,
+    state: "waiting",
+  },
+  hud: (s) => [
+    { label: "Length", value: s.length, variant: "green" },
+    {
+      label: "Level",
+      value: String(s.level).padStart(2, "0"),
+      variant: "yellow",
+    },
+    {
+      label: "Bonus",
+      value: s.bonusSeconds > 0 ? `${s.bonusSeconds}s` : "—",
+      variant: "magenta",
+    },
+  ],
+  controls: [
+    { keys: ["←", "↑", "↓", "→"], action: "Move" },
+    { keys: ["W", "A", "S", "D"], action: "Move" },
+  ],
+  ariaLabel: "Snake game",
+});
+
 /** Playable games by `games.id`. A catalog row with no entry is "not playable yet". */
 export const registry: Record<string, AnyGameDefinition> = {
   asteroids,
   tetris,
   arkanoid,
+  snake,
 };
