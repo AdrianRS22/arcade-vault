@@ -1,6 +1,6 @@
 # SPEC 10 — Snake game
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 06, SPEC 07, SPEC 08
 > **Date:** 2026-11-08
 > **Objective:** Create a Snake game as a typed engine played at `/games/snake/play`, using the pixel-art fruits from `references/source-assets/snake-assets/`, with its own leaderboard.
@@ -166,34 +166,34 @@ Before writing code, read `node_modules/next/dist/docs/` for Client Components, 
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `supabase/migrations/` contains `20261108120000_seed_snake.sql`, `npm run db:types` shows no diff, and `games` has the `snake` row with 0 scores.
-- [ ] `/games` and `/games/snake` show the title SNAKE and its description; the home "GAMES AVAILABLE NOW" rail lists it with the `cover-snake` cover.
-- [ ] `/games/snake/play` runs the real engine with the listed controls.
-- [ ] HUD values (SCORE, LENGTH, LEVEL, BONUS) always match the engine.
-- [ ] Hitting a wall or the snake's own body opens the GAME OVER modal with the same score as the HUD; END opens it with the current score; PLAY AGAIN restarts with score 0, length 3, level 1, no bonus and the `waiting` state.
-- [ ] PAUSE, `P` and `Esc` freeze the game and show PAUSED; resuming does not make the snake skip cells or the bonus timer jump; switching tab pauses.
-- [ ] Arrow keys and Space do not scroll the page while playing; typing initials in the modal (including `W`, `A`, `S`, `D`) does not affect the game.
-- [ ] Leaving the play page and coming back runs a single loop (normal speed, no console errors).
-- [ ] The canvas uses the neon palette (dark background, green neon snake), not plain white on black.
-- [ ] At 375 px wide the canvas fits the CRT with no horizontal scroll, and the HUD does not overflow.
-- [ ] SAVE SCORE shows `SAVING…` then `SAVED — RANK #N`; the score appears in the Hall of Fame tab for SNAKE, in the detail "TOP SCORES" and in home "LATEST SCORES"; the game's plays go up by 1; the Asteroids, Tetris and Arkanoid leaderboards are unchanged.
-- [ ] Asteroids, Tetris and Arkanoid still play and save exactly as before; Arkanoid keeps its MUTE button and Snake shows none.
-- [ ] No secret or service-role key is used.
-- [ ] Assets: the network panel shows no 404 for `fruits.png`; blocking its URL leaves a blank canvas, no crash and no GAME OVER.
-- [ ] A new run shows the snake (length 3, centered, facing right) and "PRESS AN ARROW", and nothing moves until a direction key is pressed; pressing `←` first does not start the run.
-- [ ] At level 1 the snake moves 8 cells per second; each level adds 1; it never moves faster than 20 cells per second.
-- [ ] Eating a fruit adds exactly `10 × level` points and 1 to LENGTH; LEVEL goes up after every 5 fruits (the bonus does not count).
-- [ ] The next fruit never appears on a snake cell or on the bonus cell.
-- [ ] A bonus can appear only right after eating a normal fruit, never two at once; it uses a different sprite from the normal fruit, adds `50 × level` points and 1 to LENGTH, disappears after 5 seconds, blinks during its last 1.5 seconds, and HUD BONUS counts down from `5s` to `1s` and then shows `—`.
-- [ ] Pressing the direction opposite to the current one does nothing; pressing the same direction does nothing.
-- [ ] Two direction presses made within one step are both applied, one per step, in order; a third press in the same step is dropped.
-- [ ] Moving into the cell the tail leaves in the same step does not end the run.
-- [ ] Hitting the wall ends the run and `onGameOver` is called once; the snake does not wrap around.
-- [ ] The drawn fruit sprites are the pixel-art row, scaled with no blur, and each of the 22 entries of `FRUIT_SPRITES` is drawn as the fruit its name says.
-- [ ] The score never exceeds 9,999,999 in the HUD or in the saved row.
-- [ ] The canvas draws no SCORE, LENGTH, LEVEL, GAME OVER or restart text, and no key restarts the game.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `supabase/migrations/` contains `20261108120000_seed_snake.sql`, `npm run db:types` shows no diff, and `games` has the `snake` row with 0 scores.
+- [x] `/games` and `/games/snake` show the title SNAKE and its description; the home "GAMES AVAILABLE NOW" rail lists it with the `cover-snake` cover.
+- [x] `/games/snake/play` runs the real engine with the listed controls.
+- [x] HUD values (SCORE, LENGTH, LEVEL, BONUS) always match the engine.
+- [x] Hitting a wall or the snake's own body opens the GAME OVER modal with the same score as the HUD; END opens it with the current score; PLAY AGAIN restarts with score 0, length 3, level 1, no bonus and the `waiting` state.
+- [x] PAUSE, `P` and `Esc` freeze the game and show PAUSED; resuming does not make the snake skip cells or the bonus timer jump; switching tab pauses.
+- [x] Arrow keys and Space do not scroll the page while playing; typing initials in the modal (including `W`, `A`, `S`, `D`) does not affect the game.
+- [x] Leaving the play page and coming back runs a single loop (normal speed, no console errors).
+- [x] The canvas uses the neon palette (dark background, green neon snake), not plain white on black.
+- [x] At 375 px wide the canvas fits the CRT with no horizontal scroll, and the HUD does not overflow.
+- [x] SAVE SCORE shows `SAVING…` then `SAVED — RANK #N`; the score appears in the Hall of Fame tab for SNAKE, in the detail "TOP SCORES" and in home "LATEST SCORES"; the game's plays go up by 1; the Asteroids, Tetris and Arkanoid leaderboards are unchanged.
+- [x] Asteroids, Tetris and Arkanoid still play and save exactly as before; Arkanoid keeps its MUTE button and Snake shows none.
+- [x] No secret or service-role key is used.
+- [x] Assets: the network panel shows no 404 for `fruits.png`; blocking its URL leaves a blank canvas, no crash and no GAME OVER.
+- [x] A new run shows the snake (length 3, centered, facing right) and "PRESS AN ARROW", and nothing moves until a direction key is pressed; pressing `←` first does not start the run.
+- [x] At level 1 the snake moves 8 cells per second; each level adds 1; it never moves faster than 20 cells per second.
+- [x] Eating a fruit adds exactly `10 × level` points and 1 to LENGTH; LEVEL goes up after every 5 fruits (the bonus does not count).
+- [x] The next fruit never appears on a snake cell or on the bonus cell.
+- [x] A bonus can appear only right after eating a normal fruit, never two at once; it uses a different sprite from the normal fruit, adds `50 × level` points and 1 to LENGTH, disappears after 5 seconds, blinks during its last 1.5 seconds, and HUD BONUS counts down from `5s` to `1s` and then shows `—`.
+- [x] Pressing the direction opposite to the current one does nothing; pressing the same direction does nothing.
+- [x] Two direction presses made within one step are both applied, one per step, in order; a third press in the same step is dropped.
+- [x] Moving into the cell the tail leaves in the same step does not end the run.
+- [x] Hitting the wall ends the run and `onGameOver` is called once; the snake does not wrap around.
+- [x] The drawn fruit sprites are the pixel-art row, scaled with no blur, and each of the 22 entries of `FRUIT_SPRITES` is drawn as the fruit its name says.
+- [x] The score never exceeds 9,999,999 in the HUD or in the saved row.
+- [x] The canvas draws no SCORE, LENGTH, LEVEL, GAME OVER or restart text, and no key restarts the game.
 
 ## Decisions
 
