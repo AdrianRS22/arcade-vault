@@ -1153,6 +1153,147 @@ a {
   text-align: center;
 }
 
+/* on-screen controls: hidden by default, shown only on touch-first devices */
+.touch-controls {
+  display: none;
+}
+@media (hover: none) and (pointer: coarse) {
+  .touch-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-top: 18px;
+    padding: 0 4px;
+    /* a held finger must not scroll, zoom, select text or open the callout */
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+.touch-dpad {
+  position: relative;
+  display: grid;
+  grid-template:
+    ". up ." 60px
+    "left . right" 60px
+    ". down ." 60px / 60px 60px 60px;
+  gap: 2px;
+  touch-action: none;
+}
+.touch-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 56px;
+  min-height: 56px;
+  padding: 0;
+  color: var(--ink-dim);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition:
+    color 80ms,
+    background 80ms,
+    box-shadow 80ms,
+    border-color 80ms;
+  /* the pointer lives on the D-pad; the arrows only draw */
+  pointer-events: none;
+}
+.touch-arrow svg {
+  width: 22px;
+  height: 22px;
+  fill: currentColor;
+}
+.touch-arrow[aria-disabled="true"] {
+  opacity: 0.22;
+}
+.touch-arrow[data-lit="true"] {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  background: rgba(0, 245, 255, 0.12);
+  box-shadow:
+    0 0 14px rgba(0, 245, 255, 0.55),
+    inset 0 0 8px rgba(0, 245, 255, 0.35);
+}
+.touch-hub {
+  grid-area: 2 / 2;
+  align-self: center;
+  justify-self: center;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-faint);
+  pointer-events: none;
+}
+
+.touch-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+.touch-action {
+  min-width: 68px;
+  min-height: 68px;
+  padding: 0 8px;
+  font-family: var(--pixel);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--ink);
+  background: var(--bg-2);
+  border: 1px solid var(--cyan);
+  cursor: pointer;
+  transition:
+    transform 80ms ease,
+    box-shadow 80ms,
+    color 80ms;
+  clip-path: polygon(
+    10px 0,
+    100% 0,
+    100% calc(100% - 10px),
+    calc(100% - 10px) 100%,
+    0 100%,
+    0 10px
+  );
+}
+/* staggered like a classic pad: every second button sits lower */
+.touch-action:nth-child(even) {
+  margin-top: 30px;
+}
+.touch-action.magenta {
+  border-color: var(--magenta);
+}
+.touch-action.yellow {
+  border-color: var(--yellow);
+}
+.touch-action.green {
+  border-color: var(--green);
+}
+.touch-action[data-lit="true"] {
+  transform: scale(0.95);
+  color: var(--cyan);
+  background: rgba(0, 245, 255, 0.14);
+  box-shadow: inset 0 0 12px rgba(0, 245, 255, 0.5);
+}
+.touch-action.magenta[data-lit="true"] {
+  color: var(--magenta);
+  background: rgba(255, 0, 110, 0.14);
+  box-shadow: inset 0 0 12px rgba(255, 0, 110, 0.5);
+}
+.touch-action.yellow[data-lit="true"] {
+  color: var(--yellow);
+  background: rgba(245, 255, 0, 0.14);
+  box-shadow: inset 0 0 12px rgba(245, 255, 0, 0.5);
+}
+.touch-action.green[data-lit="true"] {
+  color: var(--green);
+  background: rgba(0, 255, 136, 0.14);
+  box-shadow: inset 0 0 12px rgba(0, 255, 136, 0.5);
+}
+
 .crt {
   position: relative;
   border-radius: 28px;
