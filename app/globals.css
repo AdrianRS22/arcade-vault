@@ -1390,6 +1390,48 @@ a {
   box-shadow: 0 0 6px var(--green);
 }
 
+/* phone in portrait: the CRT and the controls must share one screen.
+   Kept after the base .crt / .touch-* rules so it wins the cascade. */
+@media (hover: none) and (pointer: coarse) and (orientation: portrait) {
+  .av-player {
+    margin-top: 12px;
+  }
+  .player-hud {
+    margin-bottom: 10px;
+  }
+  .crt {
+    padding: 10px;
+    border-radius: 18px;
+  }
+  .crt-bottom {
+    margin-top: 8px;
+  }
+  .touch-controls {
+    gap: 12px;
+    margin-top: 12px;
+  }
+  /* 56px is the minimum hit area; this keeps D-pad + ROTATE/DROP inside 328px */
+  .touch-dpad {
+    grid-template:
+      ". up ." 56px
+      "left . right" 56px
+      ". down ." 56px / 56px 56px 56px;
+  }
+  .touch-actions {
+    gap: 10px;
+  }
+  .touch-action {
+    min-width: 62px;
+    min-height: 62px;
+    padding: 0 4px;
+    font-size: 8px;
+    letter-spacing: 0.06em;
+  }
+  .touch-action:nth-child(even) {
+    margin-top: 24px;
+  }
+}
+
 /* fake in-screen game */
 .game-arena {
   position: absolute;
