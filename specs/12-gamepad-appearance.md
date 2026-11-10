@@ -1,6 +1,6 @@
 # SPEC 12 — Gamepad appearance
 
-> **Status:** Draft
+> **Status:** Implemented
 > **Depends on:** SPEC 11
 > **Date:** 2026-11-10
 > **Objective:** Restyle the on-screen touch controls of SPEC 11 to look like the neon "Gamepad MK-II" reference in `references/gamepad-assets/`, without changing their behavior.
@@ -47,20 +47,20 @@ No new data, no type changes, no persistence. The letter is derived at render ti
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] No file in `lib/games/` (registry, engines, `shared/`) changed; only `touch-controls.tsx` and `app/globals.css`.
-- [ ] At 375×812 with touch emulation, all four play pages show the controls inside a rounded shell with inner border and dot texture, D-pad on the left.
-- [ ] The D-pad is a cross of separate raised keys with a center hub containing a cyan diamond gem that pulses; with `prefers-reduced-motion: reduce` it does not animate.
-- [ ] Asteroids shows A (FIRE) on the right and B (NOVA) to its left; Tetris shows A (ROTATE, yellow) on the right and B (DROP, magenta) on the left; each round button has its letter inside and its label caption below.
-- [ ] Button border, glow and gradient match each `variant` color.
-- [ ] Arkanoid and Snake show the shell with only the D-pad; the right side is empty.
-- [ ] Holding an arrow shows the pressed/lit style (shifted down, cyan border and glow); holding a button shows the pressed style with the dashed ring visible; releasing restores them.
-- [ ] Disabled D-pad directions (e.g. ↓ in Asteroids) are dim and emit nothing.
-- [ ] Every arrow and button keeps a hit area ≥56×56 CSS px.
-- [ ] At 375×812, `.crt` top → `.touch-controls` bottom ≤ 812px and `scrollWidth === clientWidth`.
-- [ ] At 1440×900 desktop the controls stay hidden and the keyboard legend is visible.
-- [ ] All SPEC 11 behavior criteria still pass (multi-touch, D-pad slide, Tetris auto-repeat, release on pause/game over, no selection/callout, no focus steal).
-- [ ] Screenshots of the four games at 375×812 are saved in `.playwright-screenshots/`.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] No file in `lib/games/` (registry, engines, `shared/`) changed; only `touch-controls.tsx` and `app/globals.css`.
+- [x] At 375×812 with touch emulation, all four play pages show the controls inside a rounded shell with inner border and dot texture, D-pad on the left.
+- [x] The D-pad is a cross of separate raised keys with a center hub containing a cyan diamond gem that pulses; with `prefers-reduced-motion: reduce` it does not animate.
+- [x] Asteroids shows A (FIRE) on the right and B (NOVA) to its left; Tetris shows A (ROTATE, yellow) on the right and B (DROP, magenta) on the left; each round button has its letter inside and its label caption below.
+- [x] Button border, glow and gradient match each `variant` color.
+- [x] Arkanoid and Snake show the shell with only the D-pad; the right side is empty.
+- [x] Holding an arrow shows the pressed/lit style (shifted down, cyan border and glow); holding a button shows the pressed style with the dashed ring visible; releasing restores them.
+- [x] Disabled D-pad directions (e.g. ↓ in Asteroids) are dim and emit nothing.
+- [x] Every arrow and button keeps a hit area ≥56×56 CSS px.
+- [x] At 375×812, `.crt` top → `.touch-controls` bottom ≤ 812px and `scrollWidth === clientWidth`.
+- [x] At 1440×900 desktop the controls stay hidden and the keyboard legend is visible.
+- [x] All SPEC 11 behavior criteria still pass (multi-touch, D-pad slide, Tetris auto-repeat, release on pause/game over, no selection/callout, no focus steal).
+- [x] Screenshots of the four games at 375×812 are saved in `.playwright-screenshots/`.
 
 ## Decisions
 
