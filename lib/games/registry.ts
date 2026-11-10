@@ -15,6 +15,23 @@ export type HudStat = {
   variant?: "cyan" | "magenta" | "yellow" | "green";
 };
 
+export type TouchDir = "up" | "down" | "left" | "right";
+
+export type TouchButton = {
+  label: string; // pixel-font text on the button, max ~6 chars ("FIRE", "DROP")
+  code: string; // KeyboardEvent.code it emits ("Space", "KeyB", "ArrowUp")
+  variant?: "cyan" | "magenta" | "yellow" | "green";
+};
+
+export type TouchLayout = {
+  /** Arrows shown on the D-pad; each emits ArrowUp / ArrowDown / ArrowLeft / ArrowRight. */
+  dpad: TouchDir[];
+  /** Action buttons on the right, in order. May be empty. */
+  buttons: TouchButton[];
+  /** Codes that auto-repeat while held (like the OS key repeat). */
+  repeat?: string[];
+};
+
 export type GameDefinition<S extends BaseSnapshot> = {
   load: () => Promise<{
     create: (
@@ -31,6 +48,8 @@ export type GameDefinition<S extends BaseSnapshot> = {
   ariaLabel: string;
   /** The game has sound: GamePlayer shows MUTE/UNMUTE and handles `M`. */
   sound?: boolean;
+  /** On-screen controls shown on touch devices; they emit the keys the engine reads. */
+  touch: TouchLayout;
 };
 
 /** A definition with its snapshot type erased, as stored in the registry. */
@@ -87,6 +106,13 @@ const asteroids = defineGame<AsteroidsSnapshot>({
     { keys: ["B"], action: "Nova bomb" },
   ],
   ariaLabel: "Asteroids game",
+  touch: {
+    dpad: ["left", "up", "right"],
+    buttons: [
+      { label: "FIRE", code: "Space", variant: "cyan" },
+      { label: "NOVA", code: "KeyB", variant: "magenta" },
+    ],
+  },
 });
 
 const tetris = defineGame<TetrisSnapshot>({
@@ -121,6 +147,14 @@ const tetris = defineGame<TetrisSnapshot>({
     { keys: ["Space"], action: "Hard drop" },
   ],
   ariaLabel: "Tetris game",
+  touch: {
+    dpad: ["left", "right", "down"],
+    buttons: [
+      { label: "ROTATE", code: "ArrowUp", variant: "yellow" },
+      { label: "DROP", code: "Space", variant: "magenta" },
+    ],
+    repeat: ["ArrowLeft", "ArrowRight", "ArrowDown"],
+  },
 });
 
 const arkanoid = defineGame<ArkanoidSnapshot>({
@@ -148,6 +182,7 @@ const arkanoid = defineGame<ArkanoidSnapshot>({
   ],
   ariaLabel: "Arkanoid game",
   sound: true,
+  touch: { dpad: ["left", "right"], buttons: [] },
 });
 
 const snake = defineGame<SnakeSnapshot>({
@@ -180,6 +215,7 @@ const snake = defineGame<SnakeSnapshot>({
     { keys: ["W", "A", "S", "D"], action: "Move" },
   ],
   ariaLabel: "Snake game",
+  touch: { dpad: ["up", "down", "left", "right"], buttons: [] },
 });
 
 /** Playable games by `games.id`. A catalog row with no entry is "not playable yet". */
