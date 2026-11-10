@@ -21,7 +21,8 @@ Every engine reads input through `window` `keydown` / `keyup` and `KeyboardEvent
 - `app/_components/games/touch-controls.tsx` (Client Component): D-pad on the left, action buttons on the right, under the CRT. Pointer Events with multi-touch (one `pointerId` per finger); sliding a finger across D-pad arrows changes direction without lifting it.
 - `GamePlayer` renders `TouchControls` under the CRT; the controls release every held key on pause, on game over and on unmount, and ignore touches while paused or over.
 - Visibility by CSS only: shown under `@media (hover: none) and (pointer: coarse)`, hidden otherwise; in that same media query the keyboard legend (`.controls-legend`) is hidden.
-- The control itself uses `touch-action: none`, `user-select: none` and no context menu, so a held finger does not scroll, zoom, select text or open the callout (needed for Pointer Events to keep firing; the rest of the page is unchanged).
+- The control itself uses `touch-action: none`, `user-select: none` and no context menu, so a held finger does not scroll, zoom, select text or open the callout (needed for Pointer Events to keep firing; the rest of the page is unchanged, except the play area in the next bullet).
+- No text selection and no iOS callout on the play page: on a coarse pointer, `body:has(.av-player)` and all its children (header, HUD, CRT, canvas, site footer) get `user-select: none`, `-webkit-user-select: none` and `-webkit-touch-callout: none`, so a long press on the canvas, a gap or a label never opens "Copy / Search". `.av-player` only exists in `GamePlayer`, so no other page is affected. A real iPhone (Chrome) test showed the menu on the controls, then on the canvas and HUD, then on the footer copyright: iOS selects the nearest text, so protecting only part of the page just moves the selection. Text fields (the GAME OVER initials input) stay selectable and typable. Desktop is unchanged.
 - Height fit: on a coarse pointer in portrait, the player margins and CRT padding shrink so the CRT and the touch controls fit together in one phone screen (375×812) without scrolling between them.
 - Update `.claude/skills/new-game/integration-contract.md` and the "Game platform" section of `CLAUDE.md` so new games declare `touch`.
 - UI pieces use the `/frontend-design` skill (retro/neon look matching `.btn`, `.crt`, `kbd`).
@@ -128,6 +129,7 @@ Before writing code, read `node_modules/next/dist/docs/` for Client Components.
 - [ ] Lifting a finger, or the browser cancelling the pointer, always releases the key (no ship that keeps rotating, no paddle that keeps moving).
 - [ ] While PAUSED or with the GAME OVER modal open, touches on the controls do nothing; pausing while holding a key releases it, and resuming does not leave a key stuck.
 - [ ] Holding a control does not scroll or zoom the page, select text or open the long-press callout; the page still scrolls when dragging outside the control.
+- [ ] On a coarse pointer, a long press on the canvas, the CRT frame, the HUD, the gap between controls or the site footer selects no text and opens no "Copy / Search" menu (computed `user-select` is `none` on them); the GAME OVER initials input still accepts typing; on desktop text stays selectable.
 - [ ] Touching a control never moves focus away from the page (typing initials in the modal still works afterwards).
 - [ ] At 375×812 the distance from the top of `.crt` to the bottom of `.touch-controls` is ≤ 812 px, and `scrollWidth` equals `clientWidth`.
 - [ ] Every arrow and button has a hit area of at least 56×56 CSS px.
@@ -153,6 +155,8 @@ Before writing code, read `node_modules/next/dist/docs/` for Client Components.
 - **Yes:** hold with auto-repeat for declared codes (user's choice), mirroring the OS key repeat Tetris relies on (170 ms delay, 50 ms interval).
 - **Yes:** multi-touch with Pointer Events and finger sliding across the D-pad (user's choice).
 - **Yes:** `touch-action: none` and no selection/callout on the control only. Not chosen as an "extra" by the user, but required for Pointer Events to keep firing while a finger is held; page-wide zoom blocking stays out of scope.
+- **Yes:** no text selection or callout on the whole play page (`body:has(.av-player)`, footer included) on a coarse pointer (user's choice, extended after a real iPhone test showed "Copy / Search" on the canvas, the HUD and then the footer copyright). Inputs are exempt so initials can be typed.
+- **No:** blocking selection on other pages or on desktop; only the play page on touch devices loses text selection.
 - **No:** vibration (not chosen by the user).
 - **Yes:** height fit in portrait (user's choice) so the player does not scroll between the screen and the controls.
 - **Yes:** verification with Playwright mobile emulation (user's choice); a real device is optional and noted in the PR.

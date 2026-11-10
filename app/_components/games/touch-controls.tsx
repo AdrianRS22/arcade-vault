@@ -77,6 +77,7 @@ const DPAD_CELLS: { dir: TouchDir; area: string }[] = [
  */
 export function TouchControls({ layout, disabled }: TouchControlsProps) {
   const keys = useMemo(() => createVirtualKeys(layout.repeat), [layout.repeat]);
+  const rootRef = useRef<HTMLDivElement>(null);
   const dpadRef = useRef<HTMLDivElement>(null);
   const disabledRef = useRef(disabled);
   // Direction held by each finger on the D-pad, and key held by each button finger.
@@ -130,6 +131,16 @@ export function TouchControls({ layout, disabled }: TouchControlsProps) {
       buttonPointerMap.clear();
     };
   }, [keys]);
+
+  // Backstop for iOS: if a long press still starts a text selection inside the
+  // controls, cancel it so the "Copy / Search" menu never opens.
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return;
+    const stop = (e: Event) => e.preventDefault();
+    root.addEventListener("selectstart", stop);
+    return () => root.removeEventListener("selectstart", stop);
+  }, []);
 
   // ----- D-pad: one element, one direction per finger -----
   const moveFinger = (e: ReactPointerEvent<HTMLDivElement>) => {
@@ -187,6 +198,7 @@ export function TouchControls({ layout, disabled }: TouchControlsProps) {
   return (
     <div
       className="touch-controls"
+      ref={rootRef}
       role="group"
       aria-label="Touch controls"
       onContextMenu={(e) => e.preventDefault()}

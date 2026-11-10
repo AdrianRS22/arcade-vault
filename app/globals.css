@@ -1172,6 +1172,29 @@ a {
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
   }
+  /* iOS WebKit does not reliably inherit these into <button> and its label,
+     so a long press showed the "Copy / Search" menu: set them on every child */
+  .touch-controls * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  /* a long press on the canvas, the CRT frame or the HUD makes iOS select the
+     nearest text (the footer included), so the whole play page, which is the
+     one that contains .av-player, is unselectable on touch */
+  body:has(.av-player),
+  body:has(.av-player) * {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+  /* but the GAME OVER initials must stay typable (iOS blocks typing otherwise) */
+  body:has(.av-player) input,
+  body:has(.av-player) textarea {
+    user-select: text;
+    -webkit-user-select: text;
+  }
   /* it lists keys the player does not have */
   .controls-legend {
     display: none;
