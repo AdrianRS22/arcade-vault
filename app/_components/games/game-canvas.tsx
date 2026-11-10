@@ -2,6 +2,7 @@
 
 import { useEffect, useImperativeHandle, useRef, type Ref } from "react";
 import type { GameDefinition } from "@/lib/games/registry";
+import type { SkinId } from "@/lib/games/shared/skins";
 import type {
   BaseSnapshot,
   GameCallbacks,
@@ -16,6 +17,10 @@ export type GameHandle = Pick<
 type Props<S extends BaseSnapshot> = GameCallbacks<S> & {
   load: GameDefinition<S>["load"];
   ariaLabel: string;
+  /** The player's skin. Changing it calls `engine.setSkin` live, no restart. */
+  skin: SkinId;
+  /** Called once the engine exists, with the skins it can draw (maybe none). */
+  onSkins?: (skins: readonly SkinId[]) => void;
   ref?: Ref<GameHandle>;
 };
 
@@ -29,6 +34,8 @@ export function GameCanvas<S extends BaseSnapshot>({
   ref,
   load,
   ariaLabel,
+  skin,
+  onSkins,
   onChange,
   onGameOver,
 }: Props<S>) {
@@ -37,11 +44,20 @@ export function GameCanvas<S extends BaseSnapshot>({
   // Always call the latest callbacks without recreating the engine.
   const callbacksRef = useRef<GameCallbacks<S>>({ onChange, onGameOver });
   const loadRef = useRef(load);
+  const skinRef = useRef(skin);
+  const onSkinsRef = useRef(onSkins);
 
   useEffect(() => {
     callbacksRef.current = { onChange, onGameOver };
     loadRef.current = load;
+    skinRef.current = skin;
+    onSkinsRef.current = onSkins;
   });
+
+  // Live skin swap; the engine itself was created with the skin of that moment.
+  useEffect(() => {
+    engineRef.current?.setSkin?.(skin);
+  }, [skin]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -53,12 +69,17 @@ export function GameCanvas<S extends BaseSnapshot>({
       .current()
       .then(({ create }) => {
         if (cancelled) return;
-        engine = create(canvas, {
-          onChange: (snapshot) => callbacksRef.current.onChange(snapshot),
-          onGameOver: (finalScore) =>
-            callbacksRef.current.onGameOver(finalScore),
-        });
+        engine = create(
+          canvas,
+          {
+            onChange: (snapshot) => callbacksRef.current.onChange(snapshot),
+            onGameOver: (finalScore) =>
+              callbacksRef.current.onGameOver(finalScore),
+          },
+          { skin: skinRef.current },
+        );
         engineRef.current = engine;
+        onSkinsRef.current?.(engine.skins ?? []);
       })
       .catch((error: unknown) => {
         console.error("Could not load the game", error);

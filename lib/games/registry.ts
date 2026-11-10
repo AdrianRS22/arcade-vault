@@ -2,7 +2,12 @@ import type { ArkanoidSnapshot } from "./arkanoid/types";
 import type { AsteroidsSnapshot } from "./asteroids/types";
 import type { SnakeSnapshot } from "./snake/types";
 import type { TetrisSnapshot } from "./tetris/types";
-import type { BaseSnapshot, GameCallbacks, GameEngine } from "./types";
+import type {
+  BaseSnapshot,
+  GameCallbacks,
+  GameEngine,
+  GameOptions,
+} from "./types";
 
 export type HudStat = {
   label: string;
@@ -12,7 +17,11 @@ export type HudStat = {
 
 export type GameDefinition<S extends BaseSnapshot> = {
   load: () => Promise<{
-    create: (canvas: HTMLCanvasElement, cb: GameCallbacks<S>) => GameEngine;
+    create: (
+      canvas: HTMLCanvasElement,
+      cb: GameCallbacks<S>,
+      options: GameOptions,
+    ) => GameEngine;
   }>;
   initialSnapshot: S;
   /** Every stat except SCORE, which GamePlayer shows from `BaseSnapshot`. */

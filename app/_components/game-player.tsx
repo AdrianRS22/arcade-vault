@@ -11,6 +11,14 @@ import {
 import type { Game } from "@/app/data/games";
 import { isMuted, setMuted, subscribe } from "@/lib/games/shared/audio";
 import { registry, type AnyGameDefinition } from "@/lib/games/registry";
+import {
+  DEFAULT_SKIN,
+  getSkin,
+  SKIN_LABELS,
+  setSkin,
+  subscribeSkin,
+  type SkinId,
+} from "@/lib/games/shared/skins";
 import type { BaseSnapshot } from "@/lib/games/types";
 import { GameCanvas, type GameHandle } from "./games/game-canvas";
 import { saveScore } from "@/app/games/[id]/play/actions";
@@ -93,6 +101,14 @@ function PlayableGame({
   // Server snapshot is muted, so the first client render matches the HTML.
   const muted = useSyncExternalStore(subscribe, isMuted, () => true);
   const hasSound = definition.sound === true;
+  // Per-game skin; the server snapshot is the default so hydration matches.
+  const skin = useSyncExternalStore(
+    subscribeSkin,
+    () => getSkin(game.id),
+    () => DEFAULT_SKIN,
+  );
+  // Filled by the engine once created; empty means the game has no skins yet.
+  const [skins, setSkins] = useState<readonly SkinId[]>([]);
 
   // The engine follows the `paused` state.
   useEffect(() => {
@@ -202,6 +218,24 @@ function PlayableGame({
           ))}
         </div>
         <div className="hud-actions">
+          {skins.length > 0 && (
+            <div className="skin-switch" role="radiogroup" aria-label="Skin">
+              {skins.map((id) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="radio"
+                  aria-checked={skin === id}
+                  onClick={(e) => {
+                    setSkin(game.id, id);
+                    e.currentTarget.blur(); // keep Space/arrows for the game
+                  }}
+                >
+                  {SKIN_LABELS[id]}
+                </button>
+              ))}
+            </div>
+          )}
           <button
             type="button"
             className="btn yellow"
@@ -233,6 +267,8 @@ function PlayableGame({
             ref={engineRef}
             load={definition.load}
             ariaLabel={definition.ariaLabel}
+            skin={skin}
+            onSkins={setSkins}
             onChange={handleChange}
             onGameOver={handleGameOver}
           />

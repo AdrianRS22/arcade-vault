@@ -10,7 +10,8 @@ Files: `types.ts`, `constants.ts`, `entities.ts` (as needed), `engine.ts`. No Re
 export function create<Name>Game(
   canvas: HTMLCanvasElement,
   callbacks: GameCallbacks<Snapshot>,
-): GameEngine; // pause, resume, end, restart, destroy
+  options: GameOptions, // { skin: SkinId }
+): GameEngine; // pause, resume, end, restart, destroy, skins, setSkin
 ```
 
 - Snapshot: `{ score: number; state: ...; ...game fields }`. `onChange(snapshot)` only when a field changes, never every frame. `onGameOver(finalScore)` once per game over.
@@ -18,7 +19,8 @@ export function create<Name>Game(
 - Speeds in units/second, `dt` in seconds capped at 0.05. `resume()` and `restart()` reset `lastTime` so there is no `dt` jump.
 - `end()` forces game over with the current score. `restart()` starts a fresh run. `destroy()` cancels the rAF, detaches input, stops audio, and is safe under StrictMode's double mount.
 - Remove from the canvas everything the platform already shows: score/lives/level HUD, GAME OVER overlay, "press X to restart" and its key.
-- Colors come from a `PALETTE` of hex values mirroring `app/globals.css` tokens (canvas cannot read CSS variables). Glow (`shadowBlur`) only on key entities, never on particles.
+- Colors come from hex values mirroring `app/globals.css` tokens (canvas cannot read CSS variables). Glow (`shadowBlur`) only on key entities, never on particles.
+- Skins: every game ships `lib/games/<id>/skins.ts` exporting `SKINS: Record<SkinId, ...>` with at least `classic` (the default, mirroring the `globals.css` tokens), `neon` and `retro` (`SKIN_IDS` in `lib/games/shared/skins.ts`). The engine reads `options.skin`, exposes `skins` and `setSkin(id)` (live swap and redraw, also while paused) and draws only with the active skin, so no fixed `PALETTE` is left. GamePlayer shows the SKIN selector and stores the pick per game in `av:skin:<id>`. Existing games are brought up to this with `/skin-designer <id>`.
 - Score is always an integer in `0..9_999_999` (the database check).
 
 ## 2. Input

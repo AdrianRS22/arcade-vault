@@ -44,6 +44,9 @@ Project subagents live in `.claude/agents/`.
 - `game-jam` (`.claude/agents/game-jam.md`): given a **game description** (the game you want built), it writes 2–3 complete phased specs (`01-<id>-core.md`, `02-<id>-progression.md`, optional `03-…`) plus a `README.md` in `specs/game-jam/<id>/`, in the style of specs 08–10.
   - Works autonomously (no questions); what the description gives is marked "Provided (game jam)" and every gap it fills or adaptation it makes is marked "Agent's choice (game jam)" in Decisions for the user to review. Specs are always `Draft`.
   - May only write inside `specs/game-jam/<id>/`; never code, migrations or assets. Implement a spec afterwards with `/spec-impl`.
+- `skin-designer` (`.claude/agents/skin-designer.md`): given **one game id**, checks that the game has the `classic` (default), `neon` and `retro` skins and implements whatever is missing in `lib/games/<id>/` (`skins.ts` plus engine changes). If the game already has them it changes nothing.
+  - Subagents cannot launch subagents, so for several games use the user-invoked skill `/skin-designer <id...|all>` (`.claude/skills/skin-designer/`): it launches one `skin-designer` per game **in parallel**, then runs `tsc`, lint and build once.
+  - May only write inside `lib/games/<id>/` (and `public/games/<id>/`); the shared skin platform (`lib/games/shared/skins.ts`, `GameOptions` in `lib/games/types.ts`, the SKIN selector in `GamePlayer`) is never edited by it. The skin is saved per game in `localStorage` as `av:skin:<id>`.
 
 ## Tooling
 
