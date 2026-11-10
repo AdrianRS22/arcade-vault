@@ -203,43 +203,47 @@ export function TouchControls({ layout, disabled }: TouchControlsProps) {
       aria-label="Touch controls"
       onContextMenu={(e) => e.preventDefault()}
     >
-      <div
-        ref={dpadRef}
-        className="touch-dpad"
-        onPointerDown={onDpadDown}
-        onPointerMove={moveFinger}
-        onPointerUp={releaseFinger}
-        onPointerCancel={releaseFinger}
-        onLostPointerCapture={releaseFinger}
-      >
-        {DPAD_CELLS.map(({ dir, area }) => {
-          const enabled = layout.dpad.includes(dir);
-          return (
-            <button
-              key={dir}
-              type="button"
-              tabIndex={-1}
-              aria-label={DIR_LABEL[dir]}
-              aria-disabled={!enabled}
-              data-lit={litDirs.has(dir)}
-              className="touch-arrow"
-              style={{ gridArea: area }}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 6 L20 18 H4 Z"
-                  transform={`rotate(${DIR_ROTATION[dir]} 12 12)`}
-                />
-              </svg>
-            </button>
-          );
-        })}
-        <span className="touch-hub" aria-hidden="true" />
-      </div>
+      <div className="touch-body">
+        <div
+          ref={dpadRef}
+          className="touch-dpad"
+          onPointerDown={onDpadDown}
+          onPointerMove={moveFinger}
+          onPointerUp={releaseFinger}
+          onPointerCancel={releaseFinger}
+          onLostPointerCapture={releaseFinger}
+        >
+          {DPAD_CELLS.map(({ dir, area }) => {
+            const enabled = layout.dpad.includes(dir);
+            return (
+              <button
+                key={dir}
+                type="button"
+                tabIndex={-1}
+                aria-label={DIR_LABEL[dir]}
+                aria-disabled={!enabled}
+                data-lit={litDirs.has(dir)}
+                className="touch-arrow"
+                style={{ gridArea: area }}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M12 6 L20 18 H4 Z"
+                    transform={`rotate(${DIR_ROTATION[dir]} 12 12)`}
+                  />
+                </svg>
+              </button>
+            );
+          })}
+          <span className="touch-hub" aria-hidden="true">
+            <span className="touch-gem" />
+          </span>
+        </div>
 
-      {layout.buttons.length > 0 && (
+        {/* Always rendered so the D-pad stays on the left when there are no buttons. */}
         <div className="touch-actions">
-          {layout.buttons.map((b) => (
+          {/* A is buttons[0]; CSS (`row-reverse`) draws it on the right. */}
+          {layout.buttons.map((b, i) => (
             <button
               key={b.label}
               type="button"
@@ -252,11 +256,17 @@ export function TouchControls({ layout, disabled }: TouchControlsProps) {
               onPointerCancel={onButtonRelease}
               onLostPointerCapture={onButtonRelease}
             >
-              {b.label}
+              <span className="touch-ring" aria-hidden="true" />
+              <span className="touch-letter" aria-hidden="true">
+                {String.fromCharCode(65 + i)}
+              </span>
+              <span className="touch-caption" aria-hidden="true">
+                {b.label}
+              </span>
             </button>
           ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }
