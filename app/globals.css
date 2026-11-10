@@ -1159,12 +1159,18 @@ a {
 }
 @media (hover: none) and (pointer: coarse) {
   .touch-controls {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
+    display: block;
+    position: relative;
     margin-top: 18px;
-    padding: 0 4px;
+    padding: 12px 14px;
+    background: linear-gradient(180deg, #1c1c28 0%, #0c0c14 100%);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow:
+      0 24px 60px -28px rgba(0, 245, 255, 0.4),
+      0 0 0 1px rgba(255, 255, 255, 0.02),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -2px 0 rgba(0, 0, 0, 0.6);
     /* a held finger must not scroll, zoom, select text or open the callout */
     touch-action: none;
     user-select: none;
@@ -1201,17 +1207,52 @@ a {
   }
 }
 
+/* ---- gamepad shell: inner cyan border + dot-grid texture ---- */
+.touch-controls::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border: 1px solid rgba(0, 245, 255, 0.14);
+  border-radius: 16px;
+  pointer-events: none;
+}
+.touch-controls::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px
+  );
+  background-size: 8px 8px;
+  border-radius: inherit;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.touch-body {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 4px 14px;
+}
+
+/* ---- D-pad: a cross of separate raised keys around a hub ---- */
 .touch-dpad {
   position: relative;
+  flex: none;
   display: grid;
   grid-template:
-    ". up ." 60px
-    "left . right" 60px
-    ". down ." 60px / 60px 60px 60px;
-  gap: 2px;
+    ". up ." 56px
+    "left hub right" 56px
+    ". down ." 56px / 56px 56px 56px;
   touch-action: none;
 }
+/* the arrow is the 56px cell; the raised key is drawn inside it */
 .touch-arrow {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1219,106 +1260,194 @@ a {
   min-height: 56px;
   padding: 0;
   color: var(--ink-dim);
-  background: var(--bg-2);
-  border: 1px solid var(--line);
+  background: none;
+  border: 0;
   cursor: pointer;
-  transition:
-    color 80ms,
-    background 80ms,
-    box-shadow 80ms,
-    border-color 80ms;
+  transition: transform 80ms;
   /* the pointer lives on the D-pad; the arrows only draw */
   pointer-events: none;
 }
+.touch-arrow::before {
+  content: "";
+  position: absolute;
+  inset: 2px;
+  background: linear-gradient(180deg, #1a1a25, #0a0a12);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  box-shadow:
+    0 4px 0 #050507,
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -2px 4px rgba(0, 0, 0, 0.6);
+  transition:
+    box-shadow 140ms,
+    border-color 140ms,
+    background 140ms;
+}
 .touch-arrow svg {
+  position: relative;
   width: 22px;
   height: 22px;
   fill: currentColor;
+  transition: filter 140ms;
 }
 .touch-arrow[aria-disabled="true"] {
   opacity: 0.22;
 }
 .touch-arrow[data-lit="true"] {
+  transform: translateY(3px);
   color: var(--cyan);
+}
+.touch-arrow[data-lit="true"]::before {
+  background: linear-gradient(180deg, #08161e, #030a0e);
   border-color: var(--cyan);
-  background: rgba(0, 245, 255, 0.12);
   box-shadow:
-    0 0 14px rgba(0, 245, 255, 0.55),
-    inset 0 0 8px rgba(0, 245, 255, 0.35);
+    0 1px 0 #050507,
+    inset 0 0 16px rgba(0, 245, 255, 0.45),
+    0 0 16px rgba(0, 245, 255, 0.5);
+}
+.touch-arrow[data-lit="true"] svg {
+  filter: drop-shadow(0 0 6px var(--cyan)) drop-shadow(0 0 12px var(--cyan));
 }
 .touch-hub {
-  grid-area: 2 / 2;
-  align-self: center;
-  justify-self: center;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--ink-faint);
+  grid-area: hub;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 2px;
+  background: radial-gradient(circle at 50% 50%, #181822 0%, #08080d 80%);
+  border: 1px solid rgba(0, 245, 255, 0.15);
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 12px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
   pointer-events: none;
 }
+.touch-gem {
+  width: 12px;
+  height: 12px;
+  background: var(--cyan);
+  box-shadow:
+    0 0 10px var(--cyan),
+    inset 0 0 4px rgba(0, 0, 0, 0.5);
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  animation: pulse-led 2s ease-in-out infinite;
+}
+@keyframes pulse-led {
+  50% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .touch-gem {
+    animation: none;
+  }
+}
 
+/* ---- action buttons: glossy round keys, A (buttons[0]) on the right ---- */
 .touch-actions {
   display: flex;
-  align-items: flex-start;
+  flex-direction: row-reverse;
+  align-items: center;
+  justify-content: flex-start;
   gap: 14px;
 }
 .touch-action {
-  min-width: 68px;
-  min-height: 68px;
-  padding: 0 8px;
-  font-family: var(--pixel);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  color: var(--ink);
-  background: var(--bg-2);
-  border: 1px solid var(--cyan);
+  --ab-color: var(--cyan);
+  --ab-mid: rgba(0, 200, 230, 0.7);
+  --ab-deep: rgba(0, 50, 70, 0.95);
+  --ab-glow: rgba(0, 245, 255, 0.4);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  color: var(--ab-color);
+  border: 2px solid var(--ab-color);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 32% 26%,
+      rgba(255, 255, 255, 0.25),
+      transparent 50%
+    ),
+    radial-gradient(circle at 50% 55%, var(--ab-mid), var(--ab-deep) 75%);
   cursor: pointer;
+  box-shadow:
+    0 6px 0 #050507,
+    0 0 22px var(--ab-glow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 0 -4px 8px rgba(0, 0, 0, 0.4);
   transition:
-    transform 80ms ease,
-    box-shadow 80ms,
-    color 80ms;
-  clip-path: polygon(
-    10px 0,
-    100% 0,
-    100% calc(100% - 10px),
-    calc(100% - 10px) 100%,
-    0 100%,
-    0 10px
-  );
-}
-/* staggered like a classic pad: every second button sits lower */
-.touch-action:nth-child(even) {
-  margin-top: 30px;
+    transform 80ms,
+    box-shadow 140ms;
 }
 .touch-action.magenta {
-  border-color: var(--magenta);
+  --ab-color: var(--magenta);
+  --ab-mid: rgba(255, 0, 110, 0.7);
+  --ab-deep: rgba(110, 0, 40, 0.95);
+  --ab-glow: rgba(255, 0, 110, 0.4);
 }
 .touch-action.yellow {
-  border-color: var(--yellow);
+  --ab-color: var(--yellow);
+  --ab-mid: rgba(230, 240, 0, 0.7);
+  --ab-deep: rgba(70, 70, 0, 0.95);
+  --ab-glow: rgba(245, 255, 0, 0.4);
 }
 .touch-action.green {
-  border-color: var(--green);
+  --ab-color: var(--green);
+  --ab-mid: rgba(0, 220, 120, 0.7);
+  --ab-deep: rgba(0, 60, 35, 0.95);
+  --ab-glow: rgba(0, 255, 136, 0.4);
+}
+.touch-letter {
+  position: relative;
+  z-index: 2;
+  font-family: var(--pixel);
+  font-size: 20px;
+  letter-spacing: 0.02em;
+  color: #fff;
+  text-shadow:
+    0 0 8px var(--ab-color),
+    0 0 18px var(--ab-color),
+    0 1px 0 rgba(0, 0, 0, 0.6);
+}
+.touch-caption {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--pixel);
+  font-size: 7px;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--ink-dim);
+}
+.touch-ring {
+  position: absolute;
+  inset: -8px;
+  border: 1px dashed var(--ab-color);
+  border-radius: 50%;
+  opacity: 0;
+  transition:
+    opacity 140ms,
+    transform 200ms;
+  pointer-events: none;
 }
 .touch-action[data-lit="true"] {
-  transform: scale(0.95);
-  color: var(--cyan);
-  background: rgba(0, 245, 255, 0.14);
-  box-shadow: inset 0 0 12px rgba(0, 245, 255, 0.5);
+  transform: translateY(4px) scale(0.97);
+  box-shadow:
+    0 1px 0 #050507,
+    0 0 36px var(--ab-glow),
+    inset 0 0 18px rgba(0, 0, 0, 0.5);
 }
-.touch-action.magenta[data-lit="true"] {
-  color: var(--magenta);
-  background: rgba(255, 0, 110, 0.14);
-  box-shadow: inset 0 0 12px rgba(255, 0, 110, 0.5);
-}
-.touch-action.yellow[data-lit="true"] {
-  color: var(--yellow);
-  background: rgba(245, 255, 0, 0.14);
-  box-shadow: inset 0 0 12px rgba(245, 255, 0, 0.5);
-}
-.touch-action.green[data-lit="true"] {
-  color: var(--green);
-  background: rgba(0, 255, 136, 0.14);
-  box-shadow: inset 0 0 12px rgba(0, 255, 136, 0.5);
+.touch-action[data-lit="true"] .touch-ring {
+  opacity: 1;
+  transform: scale(1.08);
 }
 
 .crt {
@@ -1429,29 +1558,35 @@ a {
   .crt-bottom {
     margin-top: 8px;
   }
+  /* tight shell: the CRT and the whole pad must fit one 375x812 screen */
   .touch-controls {
-    gap: 12px;
-    margin-top: 12px;
+    margin-top: 10px;
+    padding: 6px 8px;
+    border-radius: 16px;
   }
-  /* 56px is the minimum hit area; this keeps D-pad + ROTATE/DROP inside 328px */
-  .touch-dpad {
-    grid-template:
-      ". up ." 56px
-      "left . right" 56px
-      ". down ." 56px / 56px 56px 56px;
+  .touch-controls::before {
+    border-radius: 12px;
+  }
+  /* 56px D-pad cells (168px box) + two 60px buttons fit inside 328px */
+  .touch-body {
+    gap: 4px;
+    padding: 4px 0 10px;
   }
   .touch-actions {
-    gap: 10px;
+    gap: 12px;
   }
   .touch-action {
-    min-width: 62px;
-    min-height: 62px;
-    padding: 0 4px;
-    font-size: 8px;
-    letter-spacing: 0.06em;
+    width: 60px;
+    height: 60px;
   }
-  .touch-action:nth-child(even) {
-    margin-top: 24px;
+  .touch-letter {
+    font-size: 18px;
+  }
+  .touch-ring {
+    inset: -5px;
+  }
+  .touch-caption {
+    top: calc(100% + 10px);
   }
 }
 
