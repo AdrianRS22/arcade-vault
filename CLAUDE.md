@@ -48,6 +48,10 @@ Project subagents live in `.claude/agents/`.
   - Subagents cannot launch subagents, so for several games use the user-invoked skill `/skin-designer <id...|all>` (`.claude/skills/skin-designer/`): it launches one `skin-designer` per game **in parallel**, then runs `tsc`, lint and build once.
   - May only write inside `lib/games/<id>/` (and `public/games/<id>/`); the shared skin platform (`lib/games/shared/skins.ts`, `GameOptions` in `lib/games/types.ts`, the SKIN selector in `GamePlayer`) is never edited by it. The skin is saved per game in `localStorage` as `av:skin:<id>`.
 
+- `mobile-porter` (`.claude/agents/mobile-porter.md`): given **one game id**, audits it against SPEC 11 with Playwright mobile emulation (375×812, touch) and desktop (1440×900), and fixes its `touch` layout or coarse-pointer CSS if something fails. If the game already passes it changes nothing.
+  - Saves screenshots in `.playwright-screenshots/` (`mobile-porter-<id>-mobile.png` / `-desktop.png`).
+  - May only edit the game's `touch` entry in `lib/games/registry.ts` and coarse-pointer CSS in `app/globals.css`; it never touches engines, `createInput` or the shared touch platform (reports those as blockers). Run it one game at a time.
+
 ## Tooling
 
 - A `PostToolUse` hook (`.claude/settings.json`) runs `.claude/hooks/format-and-lint.mjs` after every `Write|Edit`: Prettier, then `eslint --fix` on the touched file. Exit code 2 feeds ESLint errors back; fix them, do not bypass the hook.
