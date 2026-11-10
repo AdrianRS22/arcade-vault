@@ -35,15 +35,3 @@ export const NOVA_CHANCE = 0.35; // chance Nova appears in a level
 export const NOVA_FLASH = 0.35; // s of screen flash on detonation
 export const POWERUP_RADIUS = 10;
 export const POWERUP_TTL = 8; // s
-
-// Neon palette. Hex mirrors the tokens in app/globals.css
-// (canvas cannot read CSS variables directly).
-export const PALETTE = {
-  cyan: "#00f5ff", // --cyan: ship
-  magenta: "#ff006e", // --magenta: bullets, triple shot item
-  yellow: "#f5ff00", // --yellow: asteroids
-  green: "#00ff88", // --green: Nova item
-  ink: "#e6e9ff", // --ink: neutral highlights
-  thrust: "rgba(255, 130, 0, 0.85)", // thruster flame (same orange as the reference)
-  bg: "#000000",
-} as const;
