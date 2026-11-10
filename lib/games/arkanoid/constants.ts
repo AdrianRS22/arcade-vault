@@ -26,10 +26,3 @@ export const SPEED_STEP = 0.1; // +10% ball speed per full loop of the 3 layouts
 export const MAX_SPEED_FACTOR = 2; // 720 px/s
 // speedFactor(level) = min(MAX_SPEED_FACTOR, 1 + SPEED_STEP * floor((level - 1) / LEVELS.length))
 export const MAX_SCORE = 9_999_999; // database check on `scores.score`
-
-/** Mirrors the `app/globals.css` tokens. */
-export const PALETTE = {
-  bg: "#0a0a0f", // --bg
-  banner: "#ff006e", // --magenta, "LEVEL N" banner
-  glow: "#00f5ff", // --cyan, ball and paddle glow
-} as const;

@@ -3,7 +3,6 @@ import {
   BULLET_SPEED,
   BULLET_TTL,
   H,
-  PALETTE,
   POWERUP_RADIUS,
   POWERUP_TTL,
   RADII,
@@ -18,6 +17,7 @@ import {
   TRIPLE_SPREAD,
   W,
 } from "./constants";
+import type { AsteroidsSkin } from "./skins";
 
 // ── Utils ─────────────────────────────────────────────────────────────────────
 export const wrap = (v: number, max: number) => ((v % max) + max) % max;
@@ -31,9 +31,30 @@ export const randInt = (min: number, max: number) =>
   Math.floor(rand(min, max + 1));
 
 /** Soft neon glow. Reset by the surrounding ctx.save()/restore(). */
-function glow(ctx: CanvasRenderingContext2D, color: string, blur: number) {
+function glow(
+  ctx: CanvasRenderingContext2D,
+  skin: AsteroidsSkin,
+  color: string,
+  blur: number,
+) {
+  if (skin.glow <= 0) return;
   ctx.shadowColor = color;
-  ctx.shadowBlur = blur;
+  ctx.shadowBlur = blur * skin.glow;
+}
+
+/** Translucent fill of the current path, drawn before the outline. */
+function softFill(
+  ctx: CanvasRenderingContext2D,
+  skin: AsteroidsSkin,
+  color: string,
+) {
+  if (skin.fillAlpha <= 0) return;
+  ctx.save();
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = skin.fillAlpha;
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
 }
 
 // ── Bullet ────────────────────────────────────────────────────────────────────
@@ -60,10 +81,10 @@ export class Bullet {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, skin: AsteroidsSkin) {
     ctx.save();
-    glow(ctx, PALETTE.magenta, 10);
-    ctx.fillStyle = PALETTE.magenta;
+    glow(ctx, skin, skin.bullet, 10);
+    ctx.fillStyle = skin.bullet;
     ctx.beginPath();
     ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
     ctx.fill();
@@ -120,19 +141,20 @@ export class Asteroid {
     ];
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, skin: AsteroidsSkin) {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.rot);
-    glow(ctx, PALETTE.yellow, 8);
-    ctx.strokeStyle = PALETTE.yellow;
-    ctx.lineWidth = 1.5;
+    glow(ctx, skin, skin.asteroid, 8);
+    ctx.strokeStyle = skin.asteroid;
+    ctx.lineWidth = 1.5 * skin.line;
     ctx.lineJoin = "round";
     ctx.beginPath();
     ctx.moveTo(this.verts[0][0], this.verts[0][1]);
     for (let i = 1; i < this.verts.length; i++)
       ctx.lineTo(this.verts[i][0], this.verts[i][1]);
     ctx.closePath();
+    softFill(ctx, skin, skin.asteroid);
     ctx.stroke();
     ctx.restore();
   }
@@ -201,7 +223,7 @@ export class Ship {
     return [new Bullet(ox, oy, this.angle)];
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, skin: AsteroidsSkin) {
     if (this.dead) return;
     // Blink while invincible after respawn
     if (this.invincible > 0 && Math.floor(this.invincible * 8) % 2 === 0)
@@ -210,24 +232,25 @@ export class Ship {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.5 * skin.line;
     ctx.lineJoin = "round";
 
     // Classic silhouette: triangle with a rear notch
-    glow(ctx, PALETTE.cyan, 10);
-    ctx.strokeStyle = PALETTE.cyan;
+    glow(ctx, skin, skin.ship, 10);
+    ctx.strokeStyle = skin.ship;
     ctx.beginPath();
     ctx.moveTo(20, 0); // nose
     ctx.lineTo(-12, -9); // left wing
     ctx.lineTo(-7, 0); // rear notch
     ctx.lineTo(-12, 9); // right wing
     ctx.closePath();
+    softFill(ctx, skin, skin.ship);
     ctx.stroke();
 
     // Thruster flame
     if (this.thrusting && Math.random() > 0.35) {
-      glow(ctx, PALETTE.thrust, 8);
-      ctx.strokeStyle = PALETTE.thrust;
+      glow(ctx, skin, skin.thrust, 8);
+      ctx.strokeStyle = skin.thrust;
       ctx.beginPath();
       ctx.moveTo(-8, -4);
       ctx.lineTo(-8 - rand(6, 14), 0);
@@ -267,10 +290,10 @@ export class Particle {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, skin: AsteroidsSkin) {
     ctx.save();
     ctx.globalAlpha = Math.max(0, this.ttl / this.life);
-    ctx.strokeStyle = PALETTE.ink;
+    ctx.strokeStyle = skin.ink;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(this.x, this.y);
@@ -309,18 +332,18 @@ export class PowerUp {
     if (this.ttl <= 0) this.dead = true;
   }
 
-  draw(ctx: CanvasRenderingContext2D) {
+  draw(ctx: CanvasRenderingContext2D, skin: AsteroidsSkin) {
     // Blink during the last 2 s
     if (this.ttl < 2 && Math.floor(this.ttl * 8) % 2 === 0) return;
 
     ctx.save();
     ctx.translate(this.x, this.y);
-    ctx.lineWidth = 1.5;
+    ctx.lineWidth = 1.5 * skin.line;
 
     if (this.kind === "nova") {
       // Circle with an 8-ray star
-      glow(ctx, PALETTE.green, 10);
-      ctx.strokeStyle = PALETTE.green;
+      glow(ctx, skin, skin.nova, 10);
+      ctx.strokeStyle = skin.nova;
       ctx.beginPath();
       ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
       for (let i = 0; i < 8; i++) {
@@ -328,15 +351,17 @@ export class PowerUp {
         ctx.moveTo(Math.cos(a) * 3, Math.sin(a) * 3);
         ctx.lineTo(Math.cos(a) * 7, Math.sin(a) * 7);
       }
+      softFill(ctx, skin, skin.nova);
       ctx.stroke();
       ctx.restore();
       return;
     }
 
-    glow(ctx, PALETTE.magenta, 10);
-    ctx.strokeStyle = PALETTE.magenta;
+    glow(ctx, skin, skin.triple, 10);
+    ctx.strokeStyle = skin.triple;
     ctx.beginPath();
     ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+    softFill(ctx, skin, skin.triple);
     ctx.stroke();
 
     // Three fan lines

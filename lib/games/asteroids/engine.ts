@@ -3,7 +3,6 @@ import {
   H,
   NOVA_CHANCE,
   NOVA_FLASH,
-  PALETTE,
   POINTS,
   POWERUP_MAX_FRACTION,
   SAFE_DIST,
@@ -23,6 +22,9 @@ import {
   randInt,
 } from "./entities";
 import { createInput } from "../shared/input";
+import { DEFAULT_SKIN, SKIN_IDS, type SkinId } from "../shared/skins";
+import type { GameOptions } from "../types";
+import { SKINS } from "./skins";
 import type {
   AsteroidsCallbacks,
   AsteroidsGame,
@@ -35,6 +37,7 @@ export type { AsteroidsCallbacks, AsteroidsGame, AsteroidsSnapshot };
 export function createAsteroidsGame(
   canvas: HTMLCanvasElement,
   callbacks: AsteroidsCallbacks,
+  options?: GameOptions,
 ): AsteroidsGame {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D context is not available");
@@ -46,6 +49,7 @@ export function createAsteroidsGame(
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
   const input = createInput();
+  let skin = SKINS[options?.skin ?? DEFAULT_SKIN];
 
   // ── Game state ──────────────────────────────────────────────────────────────
   let ship = new Ship();
@@ -299,21 +303,28 @@ export function createAsteroidsGame(
   // ── Draw ────────────────────────────────────────────────────────────────────
   function draw() {
     if (!ctx) return;
-    ctx.fillStyle = PALETTE.bg;
+    ctx.fillStyle = skin.bg;
     ctx.fillRect(0, 0, W, H);
 
-    particles.forEach((p) => p.draw(ctx));
-    asteroids.forEach((a) => a.draw(ctx));
-    bullets.forEach((b) => b.draw(ctx));
-    powerup?.draw(ctx);
-    novaItem?.draw(ctx);
-    ship.draw(ctx);
+    particles.forEach((p) => p.draw(ctx, skin));
+    asteroids.forEach((a) => a.draw(ctx, skin));
+    bullets.forEach((b) => b.draw(ctx, skin));
+    powerup?.draw(ctx, skin);
+    novaItem?.draw(ctx, skin);
+    ship.draw(ctx, skin);
 
     if (novaFlash > 0) {
       ctx.save();
       ctx.globalAlpha = (novaFlash / NOVA_FLASH) * 0.6;
-      ctx.fillStyle = PALETTE.ink;
+      ctx.fillStyle = skin.ink;
       ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+
+    if (skin.scanlines) {
+      ctx.save();
+      ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
+      for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
       ctx.restore();
     }
   }
@@ -347,6 +358,12 @@ export function createAsteroidsGame(
   start();
 
   return {
+    skins: SKIN_IDS,
+    setSkin(id: SkinId) {
+      if (destroyed) return;
+      skin = SKINS[id] ?? SKINS[DEFAULT_SKIN];
+      draw(); // redraw immediately, also while paused
+    },
     pause() {
       if (destroyed || paused || state === "gameover") return;
       paused = true;

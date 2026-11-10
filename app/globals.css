@@ -1083,6 +1083,42 @@ a {
   gap: 10px;
 }
 
+/* skin picker: one segmented control, the lit segment is the active skin */
+.skin-switch {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--ink-faint);
+}
+.skin-switch button {
+  padding: 0 12px;
+  min-height: 38px;
+  font-family: var(--pixel);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  transition:
+    color 160ms,
+    background 160ms;
+}
+.skin-switch button + button {
+  border-left: 1px solid var(--ink-faint);
+}
+.skin-switch button:hover {
+  color: var(--ink);
+}
+.skin-switch button[aria-checked="true"] {
+  color: var(--bg);
+  background: var(--cyan);
+  text-shadow: none;
+}
+.skin-switch button:focus-visible {
+  outline: 2px solid var(--yellow);
+  outline-offset: -2px;
+}
+
 /* keyboard legend under the CRT */
 .controls-legend {
   display: flex;

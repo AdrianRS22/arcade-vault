@@ -33,12 +33,27 @@ This is Next.js 16.4.5 with React 19.3 and has breaking changes versus common tr
 - `/new-game <references/started-games folder | description>` specs a new playable game with its leaderboard. It builds on `/spec`, writes `specs/NN-<id>-game.md` in `Draft` and stops; implement it afterwards with `/spec-impl`. It is user-invoked only. Its `integration-contract.md` (in `.claude/skills/new-game/`) is the authoritative contract for adding a game.
 - Use always the `/frontend-design` skill to make UI interfaces.
 
+## Subagents
+
+Project subagents live in `.claude/agents/`.
+
+- `game-planner` (`.claude/agents/game-planner.md`): plans and decides which new game fits the platform. Use it **before** `/new-game` whenever the question is "what game should we add next?".
+  - Reads the catalog (`references/implemented-games.md`), `lib/games/registry.ts`, the specs and the `/new-game` integration contract, then returns 2–3 scored candidates, one recommendation and a ready-to-paste `/new-game "..."` command.
+  - Has project memory (`memory: project`) in `.claude/agent-memory/game-planner/` (`MEMORY.md` index + `suggestions.md` log), so it never repeats a previous suggestion. Tell it the outcome ("I chose X", "reject Y") to keep the status current.
+  - Keeps the To Do in `references/game-suggestions-todo.md` (`Pending` / `In progress` / `Done` / `Discarded`). It may only write there and in its memory folder; it never writes specs or code.
+- `game-jam` (`.claude/agents/game-jam.md`): given a **game description** (the game you want built), it writes 2–3 complete phased specs (`01-<id>-core.md`, `02-<id>-progression.md`, optional `03-…`) plus a `README.md` in `specs/game-jam/<id>/`, in the style of specs 08–10.
+  - Works autonomously (no questions); what the description gives is marked "Provided (game jam)" and every gap it fills or adaptation it makes is marked "Agent's choice (game jam)" in Decisions for the user to review. Specs are always `Draft`.
+  - May only write inside `specs/game-jam/<id>/`; never code, migrations or assets. Implement a spec afterwards with `/spec-impl`.
+- `skin-designer` (`.claude/agents/skin-designer.md`): given **one game id**, checks that the game has the `classic` (default), `neon` and `retro` skins and implements whatever is missing in `lib/games/<id>/` (`skins.ts` plus engine changes). If the game already has them it changes nothing.
+  - Subagents cannot launch subagents, so for several games use the user-invoked skill `/skin-designer <id...|all>` (`.claude/skills/skin-designer/`): it launches one `skin-designer` per game **in parallel**, then runs `tsc`, lint and build once.
+  - May only write inside `lib/games/<id>/` (and `public/games/<id>/`); the shared skin platform (`lib/games/shared/skins.ts`, `GameOptions` in `lib/games/types.ts`, the SKIN selector in `GamePlayer`) is never edited by it. The skin is saved per game in `localStorage` as `av:skin:<id>`.
+
 ## Tooling
 
 - A `PostToolUse` hook (`.claude/settings.json`) runs `.claude/hooks/format-and-lint.mjs` after every `Write|Edit`: Prettier, then `eslint --fix` on the touched file. Exit code 2 feeds ESLint errors back; fix them, do not bypass the hook.
 - The Supabase MCP server is configured in `.mcp.json` (project `ekupeshkawfihlnpmpvi`) and enabled in `.claude/settings.local.json`.
 - Save all Playwright screenshots in `.playwright-screenshots/` and keep them.
-- `references/` holds prototypes and reference games (`started-games/`, `templates/`, `source-assets/`). It is ESLint-ignored and never modified.
+- `references/` holds prototypes and reference games (`started-games/`, `templates/`, `source-assets/`). It is ESLint-ignored and never modified, except `references/game-suggestions-todo.md`, which the `game-planner` subagent maintains.
 
 ## Architecture notes
 

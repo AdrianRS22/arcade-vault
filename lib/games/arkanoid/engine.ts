@@ -1,6 +1,8 @@
 import { createSoundBank } from "../shared/audio";
 import { createInput } from "../shared/input";
-import type { GameEngine } from "../types";
+import { DEFAULT_SKIN, SKIN_IDS, type SkinId } from "../shared/skins";
+import type { GameEngine, GameOptions } from "../types";
+import { SKINS, type ArkanoidSkin } from "./skins";
 import {
   BALL,
   BRICK_POINTS,
@@ -14,7 +16,6 @@ import {
   MAX_SPEED_FACTOR,
   MAX_STEP,
   PADDLE,
-  PALETTE,
   SERVE_DELAY,
   SPEED_STEP,
   START_LIVES,
@@ -319,9 +320,12 @@ const BANNER_FONT = 'bold 48px "Press Start 2P", ui-monospace, monospace';
 export function createArkanoidGame(
   canvas: HTMLCanvasElement,
   callbacks: ArkanoidCallbacks,
+  options?: GameOptions,
 ): GameEngine {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D context is not available");
+
+  let skin: ArkanoidSkin = SKINS[options?.skin ?? DEFAULT_SKIN];
 
   // Logical field is W×H; the backing store follows devicePixelRatio.
   const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
@@ -378,11 +382,14 @@ export function createArkanoidGame(
   function draw() {
     if (!ctx || !sheet) return;
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = PALETTE.bg;
+    ctx.fillStyle = skin.bg;
     ctx.fillRect(0, 0, W, H);
 
+    const sprite = skin.style === "sprite";
+
     for (const b of world.bricks) {
-      if (b.alive)
+      if (!b.alive) continue;
+      if (sprite)
         drawSprite(
           ctx,
           sheet,
@@ -392,48 +399,125 @@ export function createArkanoidGame(
           BRICKS.w,
           BRICKS.h,
         );
+      else drawBrick(b.x, b.y, skin.bricks[b.color]);
     }
 
     for (const e of world.explosions) {
-      const frame =
-        EXPLOSION_FRAMES[e.color][Math.floor(e.t / EXPLOSION_FRAME)];
-      if (frame) drawFrame(ctx, sheet, frame, e.x, e.y, BRICKS.w, BRICKS.h);
+      const idx = Math.floor(e.t / EXPLOSION_FRAME);
+      if (sprite) {
+        const frame = EXPLOSION_FRAMES[e.color][idx];
+        if (frame) drawFrame(ctx, sheet, frame, e.x, e.y, BRICKS.w, BRICKS.h);
+      } else if (idx < EXPLOSION_FRAMES[e.color].length) {
+        // Procedural burst: grows and fades over the 4 frames
+        const k = e.t / (EXPLOSION_FRAME * EXPLOSION_FRAMES[e.color].length);
+        const grow = 2 + 8 * k;
+        ctx.globalAlpha = Math.max(0, 1 - k);
+        ctx.strokeStyle = skin.bricks[e.color];
+        ctx.lineWidth = 2;
+        ctx.strokeRect(
+          e.x - grow,
+          e.y - grow,
+          BRICKS.w + grow * 2,
+          BRICKS.h + grow * 2,
+        );
+        ctx.globalAlpha = 1;
+      }
     }
 
     // Glow only on the paddle and the ball
-    ctx.shadowColor = PALETTE.glow;
-    ctx.shadowBlur = 12;
-    drawSprite(
-      ctx,
-      sheet,
-      "paddle",
-      world.paddleX,
-      PADDLE.y,
-      PADDLE.w,
-      PADDLE.h,
-    );
-    drawSprite(
-      ctx,
-      sheet,
-      "ball",
-      world.ball.x,
-      world.ball.y,
-      BALL.size,
-      BALL.size,
-    );
+    ctx.shadowColor = skin.glow;
+    ctx.shadowBlur = skin.style === "retro" ? 0 : 12;
+    if (sprite) {
+      drawSprite(
+        ctx,
+        sheet,
+        "paddle",
+        world.paddleX,
+        PADDLE.y,
+        PADDLE.w,
+        PADDLE.h,
+      );
+      drawSprite(
+        ctx,
+        sheet,
+        "ball",
+        world.ball.x,
+        world.ball.y,
+        BALL.size,
+        BALL.size,
+      );
+    } else {
+      drawPaddleAndBall();
+    }
     ctx.shadowBlur = 0;
 
+    if (skin.scanlines) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
+      for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 1);
+    }
+
     if (world.state === "playing" && world.levelIntro > 0) {
-      ctx.fillStyle = "rgba(10, 10, 15, 0.55)";
+      ctx.fillStyle = skin.overlay;
       ctx.fillRect(0, 0, W, H);
       ctx.font = BANNER_FONT;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = PALETTE.banner;
-      ctx.shadowColor = PALETTE.banner;
-      ctx.shadowBlur = 16;
+      ctx.fillStyle = skin.banner;
+      ctx.shadowColor = skin.banner;
+      ctx.shadowBlur = skin.style === "retro" ? 0 : 16;
       ctx.fillText(`LEVEL ${world.level}`, W / 2, H / 2);
       ctx.shadowBlur = 0;
+    }
+  }
+
+  function drawBrick(x: number, y: number, color: string) {
+    if (!ctx) return;
+    if (skin.style === "neon") {
+      // Translucent fill plus a solid outline; no glow on the many bricks
+      ctx.globalAlpha = 0.25;
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, BRICKS.w, BRICKS.h);
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, BRICKS.w - 2, BRICKS.h - 2);
+    } else {
+      // Retro: flat fill with a light strip on top
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, BRICKS.w, BRICKS.h);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
+      ctx.fillRect(x, y, BRICKS.w, 4);
+      ctx.fillStyle = "rgba(0, 0, 0, 0.25)";
+      ctx.fillRect(x, y + BRICKS.h - 3, BRICKS.w, 3);
+    }
+  }
+
+  function drawPaddleAndBall() {
+    if (!ctx) return;
+    const { paddleX, ball } = world;
+    if (skin.style === "neon") {
+      ctx.fillStyle = "rgba(0, 245, 255, 0.3)";
+      ctx.fillRect(paddleX, PADDLE.y, PADDLE.w, PADDLE.h);
+      ctx.strokeStyle = skin.paddle;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(paddleX + 1, PADDLE.y + 1, PADDLE.w - 2, PADDLE.h - 2);
+      ctx.fillStyle = skin.ball;
+      ctx.beginPath();
+      ctx.arc(
+        ball.x + BALL.size / 2,
+        ball.y + BALL.size / 2,
+        BALL.size / 2,
+        0,
+        Math.PI * 2,
+      );
+      ctx.fill();
+    } else {
+      ctx.fillStyle = skin.paddle;
+      ctx.fillRect(paddleX, PADDLE.y, PADDLE.w, PADDLE.h);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.3)";
+      ctx.fillRect(paddleX, PADDLE.y, PADDLE.w, 4);
+      ctx.fillStyle = skin.ball;
+      ctx.fillRect(ball.x, ball.y, BALL.size, BALL.size);
     }
   }
 
@@ -492,6 +576,12 @@ export function createArkanoidGame(
 
   // ── Public API ──────────────────────────────────────────────────────────────
   return {
+    skins: SKIN_IDS,
+    setSkin(id: SkinId) {
+      if (destroyed) return;
+      skin = SKINS[id] ?? SKINS[DEFAULT_SKIN];
+      draw();
+    },
     pause() {
       if (destroyed || paused || world.state === "gameover") return;
       paused = true;

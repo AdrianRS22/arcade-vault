@@ -39,28 +39,3 @@ export const NEXT_CELLS = 4;
 export function dropInterval(level: number): number {
   return Math.max(0.1, 1 - (level - 1) * 0.09);
 }
-
-/**
- * Neon palette, indexed by board value (0 is empty). It mirrors the
- * `app/globals.css` tokens (`--cyan`, `--yellow`, `--green`, `--magenta`,
- * `--ink`) and the `cover-tetro` colours.
- */
-export const PALETTE: readonly (string | null)[] = [
-  null,
-  "#00f5ff", // 1 I: --cyan
-  "#f5ff00", // 2 O: --yellow
-  "#aa00ff", // 3 T: purple (cover-tetro)
-  "#00ff88", // 4 S: --green
-  "#ff006e", // 5 Z: --magenta
-  "#2979ff", // 6 J: blue
-  "#ff7700", // 7 L: orange (cover-tetro)
-  null, // 8 unused
-  "#ffffff", // 9 wild
-  "#ff6d00", // 10 bomb
-  "#ffea00", // 11 lightning
-  "#ff4081", // 12 tint
-  "#bcaaa4", // 13 gravity
-  "#40c4ff", // 14 freeze
-];
-
-export const GRID_COLOR = "rgba(0, 245, 255, 0.08)";
