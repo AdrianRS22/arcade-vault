@@ -85,8 +85,9 @@ Project subagents live in `.claude/agents/`.
 ## Game platform (`lib/games/`)
 
 - `types.ts` — `GameEngine` (`pause`, `resume`, `end`, `restart`, `destroy`), `BaseSnapshot` (`score`, `state`), `GameCallbacks` (`onChange` only when a field changes, `onGameOver` once per game over).
-- `registry.ts` — `defineGame<S>()` entries keyed by `games.id`: lazy `load`, `initialSnapshot`, `hud`, `controls`, `ariaLabel`, optional `sound`. A catalog row with no entry renders "NOT PLAYABLE YET".
+- `registry.ts` — `defineGame<S>()` entries keyed by `games.id`: lazy `load`, `initialSnapshot`, `hud`, `controls`, `ariaLabel`, optional `sound` and a required `touch` layout (`dpad` arrows, action `buttons`, `repeat` codes). A catalog row with no entry renders "NOT PLAYABLE YET".
 - `shared/input.ts` and `shared/audio.ts` (global mute flag, muted by default, `createSoundBank`).
+- `shared/virtual-keys.ts` — `createVirtualKeys()` dispatches synthetic `keydown`/`keyup` on `window` (ref-counted, with auto-repeat). `app/_components/games/touch-controls.tsx` uses it for the on-screen D-pad and buttons, shown only under `(hover: none) and (pointer: coarse)`; engines need no touch code.
 - Each game has its own folder (`constants.ts`, `types.ts`, `engine.ts`, plus `entities`, `levels`, `pieces` or `sprites` as needed). Static assets go in `public/games/<id>/`.
 - `GamePlayer` and `app/_components/games/game-canvas.tsx` own the score HUD, Pause (`P` / `Esc`), Mute (`M`), the GAME OVER modal and score saving. Engines must not draw or handle those.
 - To add a game: `/new-game` → review and approve the spec → `/spec-impl`.
