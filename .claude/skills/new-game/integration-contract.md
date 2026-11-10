@@ -51,9 +51,10 @@ Bootstrapped by the first game that has sound, in `lib/games/shared/audio.ts`:
 Today `GamePlayer` (`app/_components/game-player.tsx`) imports `AsteroidsCanvas` directly and hard-codes the HUD stats and `CONTROLS`. The first game after Asteroids generalizes it:
 
 - `lib/games/types.ts`: `GameEngine` (`pause`, `resume`, `end`, `restart`, `destroy`), `BaseSnapshot` (`score`, `state`), `GameCallbacks<S>`.
-- `lib/games/registry.ts`: `Record<gameId, GameDefinition>`. Each definition has `load: () => import("./<id>/engine")` (lazy, one bundle per game), `initialSnapshot`, `hud(snapshot) → { label, value, variant? }[]`, `controls`, `ariaLabel`. A `defineGame<S>()` helper keeps entries typed under `strict` with no `any`.
+- `lib/games/registry.ts`: `Record<gameId, GameDefinition>`. Each definition has `load: () => import("./<id>/engine")` (lazy, one bundle per game), `initialSnapshot`, `hud(snapshot) → { label, value, variant? }[]`, `controls`, `ariaLabel`, and a required `touch` layout (see below). A `defineGame<S>()` helper keeps entries typed under `strict` with no `any`.
 - `app/_components/games/game-canvas.tsx` replaces `asteroids-canvas.tsx`: same StrictMode-safe effect, callbacks kept in a ref, React 19 `ref` prop with `useImperativeHandle`, async engine load guarded by a `cancelled` flag.
 - `GamePlayer` reads the definition by `game.id` and renders HUD stats and the controls legend from it. Pause (`P`/`Esc`/button), `visibilitychange` auto-pause, END, PLAY AGAIN and the SPEC 07 save flow stay unchanged. A catalog row with no registry entry shows a clear "not playable yet" state instead of crashing.
+- `touch` (required, SPEC 11): `{ dpad: TouchDir[]; buttons: { label; code; variant? }[]; repeat?: string[] }`. `GamePlayer` renders `TouchControls` under the CRT from it, on coarse-pointer devices only. Each D-pad arrow emits its `Arrow*` code and each button emits its `code` as a synthetic `KeyboardEvent` on `window` (`lib/games/shared/virtual-keys.ts`), so the engine needs no touch code: it keeps reading keys through `createInput`. Declare only what the game uses (an arrow not in `dpad` is drawn disabled), keep button labels to ~6 chars, and list in `repeat` the codes that must auto-repeat while held (only those the engine reads with `pressedOrRepeat`, e.g. Tetris move / soft drop). The spec must state the layout and verify it on a 375×812 touch emulation.
 - Asteroids moves onto the registry with identical behavior; the spec carries regression criteria for it.
 - Once the registry exists, adding a game = engine in `lib/games/<id>/` + one registry entry + seed migration (+ cover CSS if new).
 
@@ -69,4 +70,4 @@ Today `GamePlayer` (`app/_components/game-player.tsx`) imports `AsteroidsCanvas`
 - No new routes: `app/games/[id]` and `app/games/[id]/play` pick the id up from `generateStaticParams`, which reads the table.
 - Keep `ensureStatic = "navigation"` and `params` read inside `<Suspense>` as they are.
 - The implementer reads `node_modules/next/dist/docs/` first (Next 16.4.5, React 19.3, Cache Components).
-- UI pieces (cover, HUD stats, MUTE, controls legend) use the `/frontend-design` skill.
+- UI pieces (cover, HUD stats, MUTE, controls legend, touch controls) use the `/frontend-design` skill.
