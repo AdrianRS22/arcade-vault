@@ -1,6 +1,6 @@
 # SPEC 11 — Touch controls
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 06, SPEC 08, SPEC 09, SPEC 10
 > **Date:** 2026-11-09
 > **Objective:** Let every playable game be played on a touch-screen phone through an on-screen D-pad and per-game action buttons that emit the same keyboard events the engines already read.
@@ -115,28 +115,28 @@ Before writing code, read `node_modules/next/dist/docs/` for Client Components.
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `GameDefinition` has a required `touch` field and the four registered games declare the layouts from the table.
-- [ ] No file in `lib/games/asteroids/`, `tetris/`, `arkanoid/`, `snake/` or `lib/games/shared/input.ts` changed.
-- [ ] At 375×812 with touch emulation, `/games/<id>/play` shows the D-pad and the declared buttons under the CRT for all four games, and the keyboard legend is hidden.
-- [ ] At 1440×900 desktop (mouse), the touch controls are not visible and the keyboard legend is.
-- [ ] Asteroids: holding ← / → rotates the ship while held, holding ↑ thrusts while held, FIRE shoots one bullet per touch, NOVA detonates a bomb when one is available; ↑ + → + FIRE held by three fingers work at the same time.
-- [ ] Tetris: tapping ← / → moves one column; holding moves one column, then repeats after ~170 ms every ~50 ms; holding ↓ soft-drops repeatedly; ROTATE rotates once per touch; DROP hard-drops once per touch.
-- [ ] Arkanoid: holding ← / → moves the paddle while held and it stops on release.
-- [ ] Snake: the first arrow (not ←) starts the run; each arrow turns the snake; sliding a finger from ↑ to → without lifting turns up then right.
-- [ ] Disabled D-pad directions (e.g. ↓ in Asteroids) emit nothing.
-- [ ] Lifting a finger, or the browser cancelling the pointer, always releases the key (no ship that keeps rotating, no paddle that keeps moving).
-- [ ] While PAUSED or with the GAME OVER modal open, touches on the controls do nothing; pausing while holding a key releases it, and resuming does not leave a key stuck.
-- [ ] Holding a control does not scroll or zoom the page, select text or open the long-press callout; the page still scrolls when dragging outside the control.
-- [ ] On a coarse pointer, a long press on the canvas, the CRT frame, the HUD, the gap between controls or the site footer selects no text and opens no "Copy / Search" menu (computed `user-select` is `none` on them); the GAME OVER initials input still accepts typing; on desktop text stays selectable.
-- [ ] Touching a control never moves focus away from the page (typing initials in the modal still works afterwards).
-- [ ] At 375×812 the distance from the top of `.crt` to the bottom of `.touch-controls` is ≤ 812 px, and `scrollWidth` equals `clientWidth`.
-- [ ] Every arrow and button has a hit area of at least 56×56 CSS px.
-- [ ] Leaving the play page while holding a control and coming back leaves no key stuck and runs a single game loop.
-- [ ] Keyboard play on desktop is unchanged for all four games (P / Esc, M on Arkanoid, saving scores).
-- [ ] `integration-contract.md` and `CLAUDE.md` mention the `touch` field.
-- [ ] Screenshots of the four games with touch controls at 375×812 are saved in `.playwright-screenshots/`.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `GameDefinition` has a required `touch` field and the four registered games declare the layouts from the table.
+- [x] No file in `lib/games/asteroids/`, `tetris/`, `arkanoid/`, `snake/` or `lib/games/shared/input.ts` changed.
+- [x] At 375×812 with touch emulation, `/games/<id>/play` shows the D-pad and the declared buttons under the CRT for all four games, and the keyboard legend is hidden.
+- [x] At 1440×900 desktop (mouse), the touch controls are not visible and the keyboard legend is.
+- [x] Asteroids: holding ← / → rotates the ship while held, holding ↑ thrusts while held, FIRE shoots one bullet per touch, NOVA detonates a bomb when one is available; ↑ + → + FIRE held by three fingers work at the same time.
+- [x] Tetris: tapping ← / → moves one column; holding moves one column, then repeats after ~170 ms every ~50 ms; holding ↓ soft-drops repeatedly; ROTATE rotates once per touch; DROP hard-drops once per touch.
+- [x] Arkanoid: holding ← / → moves the paddle while held and it stops on release.
+- [x] Snake: the first arrow (not ←) starts the run; each arrow turns the snake; sliding a finger from ↑ to → without lifting turns up then right.
+- [x] Disabled D-pad directions (e.g. ↓ in Asteroids) emit nothing.
+- [x] Lifting a finger, or the browser cancelling the pointer, always releases the key (no ship that keeps rotating, no paddle that keeps moving).
+- [x] While PAUSED or with the GAME OVER modal open, touches on the controls do nothing; pausing while holding a key releases it, and resuming does not leave a key stuck.
+- [x] Holding a control does not scroll or zoom the page, select text or open the long-press callout; the page still scrolls when dragging outside the control.
+- [x] On a coarse pointer, a long press on the canvas, the CRT frame, the HUD, the gap between controls or the site footer selects no text and opens no "Copy / Search" menu (computed `user-select` is `none` on them); the GAME OVER initials input still accepts typing; on desktop text stays selectable.
+- [x] Touching a control never moves focus away from the page (typing initials in the modal still works afterwards).
+- [x] At 375×812 the distance from the top of `.crt` to the bottom of `.touch-controls` is ≤ 812 px, and `scrollWidth` equals `clientWidth`.
+- [x] Every arrow and button has a hit area of at least 56×56 CSS px.
+- [x] Leaving the play page while holding a control and coming back leaves no key stuck and runs a single game loop.
+- [x] Keyboard play on desktop is unchanged for all four games (P / Esc, M on Arkanoid, saving scores).
+- [x] `integration-contract.md` and `CLAUDE.md` mention the `touch` field.
+- [x] Screenshots of the four games with touch controls at 375×812 are saved in `.playwright-screenshots/`.
 
 ## Decisions
 
