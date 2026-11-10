@@ -1,6 +1,6 @@
 # SPEC 12 — Gamepad appearance
 
-> **Status:** Draft
+> **Status:** Approved
 > **Depends on:** SPEC 11
 > **Date:** 2026-11-10
 > **Objective:** Restyle the on-screen touch controls of SPEC 11 to look like the neon "Gamepad MK-II" reference in `references/gamepad-assets/`, without changing their behavior.
