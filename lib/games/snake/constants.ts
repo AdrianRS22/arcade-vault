@@ -22,13 +22,3 @@ export const BONUS_BLINK = 1.5; // s, the bonus blinks during its last 1.5 s
 export const TURN_QUEUE = 2; // max queued turns
 export const MAX_DT = 0.05; // s
 export const MAX_SCORE = 9_999_999; // database check on `scores.score`
-
-/** Mirrors the `app/globals.css` tokens (canvas cannot read CSS variables). */
-export const PALETTE = {
-  bg: "#0a0a0f", // --bg
-  grid: "rgba(255, 255, 255, 0.06)", // --line-2
-  body: "#00b862", // --green, dimmed so the head stands out
-  head: "#00ff88", // --green
-  banner: "#00ff88", // --green, "PRESS AN ARROW" banner
-  glow: "#00ff88", // --green, snake head glow
-} as const;

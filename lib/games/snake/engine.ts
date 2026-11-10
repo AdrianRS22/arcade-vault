@@ -1,5 +1,6 @@
 import { createInput } from "../shared/input";
-import type { GameEngine } from "../types";
+import { DEFAULT_SKIN, SKIN_IDS, type SkinId } from "../shared/skins";
+import type { GameEngine, GameOptions } from "../types";
 import {
   BASE_SPEED,
   BONUS_BLINK,
@@ -14,14 +15,14 @@ import {
   MAX_DT,
   MAX_SCORE,
   MAX_SPEED,
-  PALETTE,
   ROWS,
   SPEED_PER_LEVEL,
   START_LENGTH,
   TURN_QUEUE,
   W,
 } from "./constants";
-import { drawFruit, FRUIT_SPRITES, loadImage } from "./sprites";
+import { SKINS } from "./skins";
+import { buildSheet, drawFruit, FRUIT_SPRITES, loadImage } from "./sprites";
 import type {
   Bonus,
   Cell,
@@ -265,6 +266,7 @@ const TURN_KEYS: readonly { dir: Dir; codes: readonly string[] }[] = [
 export function createSnakeGame(
   canvas: HTMLCanvasElement,
   callbacks: SnakeCallbacks,
+  options?: GameOptions,
 ): GameEngine {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D context is not available");
@@ -279,7 +281,9 @@ export function createSnakeGame(
   const input = createInput({ preventDefault: GAME_KEYS });
   const world = createWorld();
 
-  let fruits: HTMLImageElement | null = null;
+  let skin = SKINS[options?.skin ?? DEFAULT_SKIN];
+  let fruitImg: HTMLImageElement | null = null;
+  let fruits: CanvasImageSource | null = null; // sheet tinted for the active skin
   let gameOverSent = false;
   let running = false;
   let paused = false;
@@ -309,10 +313,10 @@ export function createSnakeGame(
   function draw() {
     if (!ctx || !fruits) return;
     ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = PALETTE.bg;
+    ctx.fillStyle = skin.bg;
     ctx.fillRect(0, 0, W, H);
 
-    ctx.strokeStyle = PALETTE.grid;
+    ctx.strokeStyle = skin.grid;
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let x = 1; x < COLS; x++) {
@@ -325,45 +329,80 @@ export function createSnakeGame(
     }
     ctx.stroke();
 
-    drawFruit(ctx, fruits, world.fruit.sprite, world.fruit.cell);
+    const fg = skin.fruitGlow;
+    drawFruit(ctx, fruits, world.fruit.sprite, world.fruit.cell, fg);
     if (world.bonus) {
       const blinking = world.bonus.remaining <= BONUS_BLINK;
       if (!blinking || Math.floor(world.bonus.remaining * 8) % 2 === 0) {
-        drawFruit(ctx, fruits, world.bonus.sprite, world.bonus.cell);
+        drawFruit(ctx, fruits, world.bonus.sprite, world.bonus.cell, fg);
       }
     }
 
     // Body first, then the head with the glow (glow only on the head).
     const inset = 3;
-    ctx.fillStyle = PALETTE.body;
+    const bodySize = CELL - inset * 2;
     for (let i = world.snake.length - 1; i >= 1; i--) {
       const c = world.snake[i];
-      ctx.fillRect(
-        c.x * CELL + inset,
-        c.y * CELL + inset,
-        CELL - inset * 2,
-        CELL - inset * 2,
-      );
+      const bx = c.x * CELL + inset;
+      const by = c.y * CELL + inset;
+      if (skin.style === "neon") {
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = skin.body;
+        ctx.fillRect(bx, by, bodySize, bodySize);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = skin.body;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(bx + 1, by + 1, bodySize - 2, bodySize - 2);
+      } else {
+        ctx.fillStyle = skin.body;
+        ctx.fillRect(bx, by, bodySize, bodySize);
+        if (skin.style === "retro") {
+          ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+          ctx.fillRect(bx, by, bodySize, 4);
+        }
+      }
     }
     const head = world.snake[0];
-    ctx.shadowColor = PALETTE.glow;
-    ctx.shadowBlur = 12;
-    ctx.fillStyle = PALETTE.head;
-    ctx.fillRect(
-      head.x * CELL + 1,
-      head.y * CELL + 1,
-      CELL - 2,
-      CELL - 2,
-    );
-    ctx.shadowBlur = 0;
+    const hx = head.x * CELL + 1;
+    const hy = head.y * CELL + 1;
+    const headSize = CELL - 2;
+    if (skin.style === "retro") {
+      ctx.fillStyle = skin.head;
+      ctx.fillRect(hx, hy, headSize, headSize);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
+      ctx.fillRect(hx, hy, headSize, 5);
+    } else {
+      ctx.shadowColor = skin.glow;
+      ctx.shadowBlur = 12;
+      if (skin.style === "neon") {
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = skin.head;
+        ctx.fillRect(hx, hy, headSize, headSize);
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = skin.head;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(hx + 1, hy + 1, headSize - 2, headSize - 2);
+      } else {
+        ctx.fillStyle = skin.head;
+        ctx.fillRect(hx, hy, headSize, headSize);
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    if (skin.scanlines) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
+      for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 2);
+    }
 
     if (world.state === "waiting") {
       ctx.font = BANNER_FONT;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = PALETTE.banner;
-      ctx.shadowColor = PALETTE.banner;
-      ctx.shadowBlur = 16;
+      ctx.fillStyle = skin.banner;
+      if (skin.style !== "retro") {
+        ctx.shadowColor = skin.banner;
+        ctx.shadowBlur = 16;
+      }
       ctx.fillText("PRESS AN ARROW", W / 2, H * 0.72);
       ctx.shadowBlur = 0;
     }
@@ -420,7 +459,8 @@ export function createSnakeGame(
   loadImage(FRUITS_URL).then(
     (img) => {
       if (destroyed) return;
-      fruits = img;
+      fruitImg = img;
+      fruits = buildSheet(img, skin.fruitTint);
       input.reset(); // ignore keys pressed while the image was loading
       emit();
       draw();
@@ -433,6 +473,13 @@ export function createSnakeGame(
 
   // ── Public API ──────────────────────────────────────────────────────────────
   return {
+    skins: SKIN_IDS,
+    setSkin(id: SkinId) {
+      if (destroyed) return;
+      skin = SKINS[id] ?? SKINS[DEFAULT_SKIN];
+      if (fruitImg) fruits = buildSheet(fruitImg, skin.fruitTint);
+      draw(); // redraw now, also while paused
+    },
     pause() {
       if (destroyed || paused || world.state === "gameover") return;
       paused = true;

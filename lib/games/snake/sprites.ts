@@ -57,12 +57,36 @@ export function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
+/**
+ * Copy of the sheet with a translucent color blended over the opaque pixels.
+ * Built once per skin change, never per frame. Returns the image itself when
+ * there is no tint (classic and neon draw the untouched sheet).
+ */
+export function buildSheet(
+  img: HTMLImageElement,
+  tint: string | null,
+): CanvasImageSource {
+  if (!tint) return img;
+  const sheet = document.createElement("canvas");
+  sheet.width = img.naturalWidth;
+  sheet.height = img.naturalHeight;
+  const sctx = sheet.getContext("2d");
+  if (!sctx) return img;
+  sctx.imageSmoothingEnabled = false;
+  sctx.drawImage(img, 0, 0);
+  sctx.globalCompositeOperation = "source-atop";
+  sctx.fillStyle = tint;
+  sctx.fillRect(0, 0, sheet.width, sheet.height);
+  return sheet;
+}
+
 /** Draws a fruit scaled to fit inside the grid cell, keeping its aspect ratio. */
 export function drawFruit(
   ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
+  img: CanvasImageSource,
   sprite: number,
   cell: Cell,
+  glow: string | null = null,
 ): void {
   const sp = FRUIT_SPRITES[sprite];
   if (!sp) return;
@@ -71,5 +95,10 @@ export function drawFruit(
   const dh = sp.sh * scale;
   const dx = cell.x * CELL + (CELL - dw) / 2;
   const dy = cell.y * CELL + (CELL - dh) / 2;
+  if (glow) {
+    ctx.shadowColor = glow;
+    ctx.shadowBlur = 10;
+  }
   ctx.drawImage(img, sp.sx, sp.sy, sp.sw, sp.sh, dx, dy, dw, dh);
+  if (glow) ctx.shadowBlur = 0;
 }

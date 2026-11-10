@@ -1,12 +1,13 @@
 import { createInput } from "../shared/input";
-import type { GameEngine } from "../types";
+import { DEFAULT_SKIN, SKIN_IDS } from "../shared/skins";
+import type { GameEngine, GameOptions } from "../types";
+import { SKINS } from "./skins";
 import {
   BLOCK,
   BOARD_X,
   BOARD_Y,
   COLS,
   FREEZE_SECONDS,
-  GRID_COLOR,
   H,
   HARD_DROP_POINTS,
   KICKS,
@@ -16,7 +17,6 @@ import {
   NEXT_CELLS,
   NEXT_X,
   NEXT_Y,
-  PALETTE,
   POWERUPS,
   POWERUP_BASE,
   POWERUP_EVERY,
@@ -275,17 +275,15 @@ export function lockPiece(game: TetrisGame): void {
 /** Keys that must not scroll the page while playing. */
 const GAME_KEYS = ["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"];
 
-const FIELD_BG = "#000000";
-const BOARD_BORDER = "rgba(0, 245, 255, 0.35)";
-const LABEL_COLOR = "#b4b9e0"; // between --ink-dim and --ink, readable at 375 px
-const FREEZE_TINT = "rgba(64, 196, 255, 0.12)";
-
 export function createTetrisGame(
   canvas: HTMLCanvasElement,
   callbacks: TetrisCallbacks,
+  options?: GameOptions,
 ): GameEngine {
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D context is not available");
+
+  let skin = SKINS[options?.skin ?? DEFAULT_SKIN];
 
   // Logical field is W×H; the backing store follows devicePixelRatio.
   const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
@@ -400,13 +398,28 @@ export function createTetrisGame(
   // ── Draw ────────────────────────────────────────────────────────────────────
   function drawCell(x: number, y: number, value: number, alpha = 1) {
     if (!ctx) return;
-    const color = PALETTE[value];
+    const color = skin.colors[value];
     if (!color) return;
     ctx.globalAlpha = alpha;
-    ctx.fillStyle = color;
-    ctx.fillRect(x + 1, y + 1, BLOCK - 2, BLOCK - 2);
-    ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
-    ctx.fillRect(x + 1, y + 1, BLOCK - 2, 3);
+    if (skin.cell === "neon") {
+      // Translucent fill + solid outline; any glow comes from the caller.
+      ctx.fillStyle = color + "55";
+      ctx.fillRect(x + 3, y + 3, BLOCK - 6, BLOCK - 6);
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 3, y + 3, BLOCK - 6, BLOCK - 6);
+    } else if (skin.cell === "retro") {
+      ctx.fillStyle = color;
+      ctx.fillRect(x + 1, y + 1, BLOCK - 2, BLOCK - 2);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.14)";
+      ctx.fillRect(x + 1, y + 1, BLOCK - 2, 4);
+    } else {
+      ctx.fillStyle = color;
+      ctx.fillRect(x + 1, y + 1, BLOCK - 2, BLOCK - 2);
+      ctx.fillStyle = "rgba(255, 255, 255, 0.28)";
+      ctx.fillRect(x + 1, y + 1, BLOCK - 2, 3);
+    }
+    ctx.lineWidth = 1;
     ctx.globalAlpha = 1;
   }
 
@@ -432,9 +445,9 @@ export function createTetrisGame(
     glow: boolean,
   ) {
     if (!ctx) return;
-    if (glow) {
-      ctx.shadowColor = PALETTE[piece.type] ?? "#ffffff";
-      ctx.shadowBlur = 12;
+    if (glow && skin.glow > 0) {
+      ctx.shadowColor = skin.colors[piece.type] ?? "#ffffff";
+      ctx.shadowBlur = skin.glow;
     }
     for (let r = 0; r < piece.shape.length; r++) {
       for (let c = 0; c < piece.shape[r].length; c++) {
@@ -458,7 +471,7 @@ export function createTetrisGame(
   function drawNext() {
     if (!ctx) return;
     const size = NEXT_CELLS * BLOCK;
-    ctx.strokeStyle = BOARD_BORDER;
+    ctx.strokeStyle = skin.border;
     ctx.lineWidth = 1;
     ctx.strokeRect(NEXT_X + 0.5, NEXT_Y + 0.5, size, size);
 
@@ -492,17 +505,17 @@ export function createTetrisGame(
     ctx.font = "bold 22px ui-monospace, monospace";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.fillStyle = LABEL_COLOR;
+    ctx.fillStyle = skin.label;
     ctx.fillText("NEXT", NEXT_X, NEXT_Y + size + 30);
   }
 
   function draw() {
     if (!ctx) return;
-    ctx.fillStyle = FIELD_BG;
+    ctx.fillStyle = skin.bg;
     ctx.fillRect(0, 0, W, H);
 
     // Grid and frame
-    ctx.strokeStyle = GRID_COLOR;
+    ctx.strokeStyle = skin.grid;
     ctx.lineWidth = 1;
     ctx.beginPath();
     for (let c = 1; c < COLS; c++) {
@@ -516,7 +529,7 @@ export function createTetrisGame(
       ctx.lineTo(BOARD_X + COLS * BLOCK, y);
     }
     ctx.stroke();
-    ctx.strokeStyle = BOARD_BORDER;
+    ctx.strokeStyle = skin.border;
     ctx.strokeRect(BOARD_X + 0.5, BOARD_Y + 0.5, COLS * BLOCK, ROWS * BLOCK);
 
     // Locked blocks
@@ -534,8 +547,13 @@ export function createTetrisGame(
     drawNext();
 
     if (isFrozen(game)) {
-      ctx.fillStyle = FREEZE_TINT;
+      ctx.fillStyle = skin.freezeTint;
       ctx.fillRect(0, 0, W, H);
+    }
+
+    if (skin.scanlines) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.18)";
+      for (let y = 0; y < H; y += 4) ctx.fillRect(0, y, W, 1);
     }
   }
 
@@ -584,6 +602,12 @@ export function createTetrisGame(
   start();
 
   return {
+    skins: SKIN_IDS,
+    setSkin(id) {
+      if (destroyed) return;
+      skin = SKINS[id] ?? SKINS[DEFAULT_SKIN];
+      draw();
+    },
     pause() {
       if (destroyed || paused || game.over) return;
       paused = true;
