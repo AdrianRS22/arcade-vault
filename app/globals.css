@@ -1172,6 +1172,10 @@ a {
     -webkit-touch-callout: none;
     -webkit-tap-highlight-color: transparent;
   }
+  /* it lists keys the player does not have */
+  .controls-legend {
+    display: none;
+  }
 }
 
 .touch-dpad {

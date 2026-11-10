@@ -21,6 +21,7 @@ import {
 } from "@/lib/games/shared/skins";
 import type { BaseSnapshot } from "@/lib/games/types";
 import { GameCanvas, type GameHandle } from "./games/game-canvas";
+import { TouchControls } from "./games/touch-controls";
 import { saveScore } from "@/app/games/[id]/play/actions";
 import { useSession } from "./session-provider";
 
@@ -289,6 +290,8 @@ function PlayableGame({
           <span>LOAD · 1MB</span>
         </div>
       </div>
+
+      <TouchControls layout={definition.touch} disabled={paused || over} />
 
       <ul className="controls-legend" aria-label="Keyboard controls">
         {controls.map((c) => (
