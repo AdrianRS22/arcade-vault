@@ -41,6 +41,9 @@ Project subagents live in `.claude/agents/`.
   - Reads the catalog (`references/implemented-games.md`), `lib/games/registry.ts`, the specs and the `/new-game` integration contract, then returns 2–3 scored candidates, one recommendation and a ready-to-paste `/new-game "..."` command.
   - Has project memory (`memory: project`) in `.claude/agent-memory/game-planner/` (`MEMORY.md` index + `suggestions.md` log), so it never repeats a previous suggestion. Tell it the outcome ("I chose X", "reject Y") to keep the status current.
   - Keeps the To Do in `references/game-suggestions-todo.md` (`Pending` / `In progress` / `Done` / `Discarded`). It may only write there and in its memory folder; it never writes specs or code.
+- `game-jam` (`.claude/agents/game-jam.md`): given a **game description** (the game you want built), it writes 2–3 complete phased specs (`01-<id>-core.md`, `02-<id>-progression.md`, optional `03-…`) plus a `README.md` in `specs/game-jam/<id>/`, in the style of specs 08–10.
+  - Works autonomously (no questions); what the description gives is marked "Provided (game jam)" and every gap it fills or adaptation it makes is marked "Agent's choice (game jam)" in Decisions for the user to review. Specs are always `Draft`.
+  - May only write inside `specs/game-jam/<id>/`; never code, migrations or assets. Implement a spec afterwards with `/spec-impl`.
 
 ## Tooling
 
