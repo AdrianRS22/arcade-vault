@@ -2,6 +2,7 @@ import type { ArkanoidSnapshot } from "./arkanoid/types";
 import type { AsteroidsSnapshot } from "./asteroids/types";
 import type { SnakeSnapshot } from "./snake/types";
 import type { TetrisSnapshot } from "./tetris/types";
+import type { ToadRoadSnapshot } from "./toadroad/types";
 import type {
   BaseSnapshot,
   GameCallbacks,
@@ -218,10 +219,34 @@ const snake = defineGame<SnakeSnapshot>({
   touch: { dpad: ["up", "down", "left", "right"], buttons: [] },
 });
 
+const toadroad = defineGame<ToadRoadSnapshot>({
+  load: async () => {
+    const { createToadRoadGame } = await import("./toadroad/engine");
+    return { create: createToadRoadGame };
+  },
+  initialSnapshot: { score: 0, lives: 3, home: 0, time: 30, state: "playing" },
+  hud: (s) => [
+    {
+      label: "Lives",
+      value: s.lives > 0 ? "♥".repeat(s.lives) : "—",
+      variant: "magenta",
+    },
+    { label: "Home", value: `${s.home}/5`, variant: "green" },
+    { label: "Time", value: `${s.time}s`, variant: "yellow" },
+  ],
+  controls: [
+    { keys: ["←", "↑", "↓", "→"], action: "Hop" },
+    { keys: ["W", "A", "S", "D"], action: "Hop" },
+  ],
+  ariaLabel: "Toad Road game",
+  touch: { dpad: ["up", "down", "left", "right"], buttons: [] },
+});
+
 /** Playable games by `games.id`. A catalog row with no entry is "not playable yet". */
 export const registry: Record<string, AnyGameDefinition> = {
   asteroids,
   tetris,
   arkanoid,
   snake,
+  toadroad,
 };
