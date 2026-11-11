@@ -1,5 +1,7 @@
 import { createInput } from "../shared/input";
-import type { GameEngine } from "../types";
+import { DEFAULT_SKIN, SKIN_IDS, type SkinId } from "../shared/skins";
+import type { GameEngine, GameOptions } from "../types";
+import { SKINS, type ToadRoadSkin } from "./skins";
 import {
   ATTEMPT_TIME,
   CELL,
@@ -14,7 +16,6 @@ import {
   MAX_DT,
   MAX_SCORE,
   OBJECT_INSET,
-  PALETTE,
   ROW_POINTS,
   SLOT_CENTERS,
   SLOT_COUNT,
@@ -326,14 +327,15 @@ const FACING_ANGLE: Record<HopDir, number> = {
   left: -Math.PI / 2,
 };
 
-const CAR_COLORS: Record<number, string> = {
-  7: PALETTE.carA,
-  9: PALETTE.carB,
-  10: PALETTE.carC,
-};
+function carColor(skin: ToadRoadSkin, row: number): string {
+  if (row === 9) return skin.carB;
+  if (row === 10) return skin.carC;
+  return skin.carA;
+}
 
 function drawFrog(
   ctx: CanvasRenderingContext2D,
+  PALETTE: ToadRoadSkin,
   x: number,
   y: number,
   facing: HopDir,
@@ -345,7 +347,7 @@ function drawFrog(
   ctx.translate(x, y);
   ctx.rotate(FACING_ANGLE[facing]);
   ctx.scale(scaleX, scaleY);
-  if (glow) {
+  if (glow && PALETTE.frogGlow) {
     ctx.shadowColor = PALETTE.frog;
     ctx.shadowBlur = 12;
   }
@@ -384,7 +386,9 @@ function drawFrog(
 export function createToadRoadGame(
   canvas: HTMLCanvasElement,
   callbacks: ToadRoadCallbacks,
+  options?: GameOptions,
 ): GameEngine {
+  let PALETTE: ToadRoadSkin = SKINS[options?.skin ?? DEFAULT_SKIN];
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D context is not available");
 
@@ -487,6 +491,37 @@ export function createToadRoadGame(
     ctx.stroke();
   }
 
+  /** Rounded body: solid, neon (translucent fill + outline) or retro (flat + light strip). */
+  function body(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    r: number,
+    fill: string,
+    outline: string,
+  ) {
+    if (!ctx) return;
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+    if (PALETTE.bodyStyle === "neon") {
+      ctx.globalAlpha = 0.3;
+      ctx.fillStyle = outline;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = outline;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      return;
+    }
+    ctx.fillStyle = fill;
+    ctx.fill();
+    if (PALETTE.bodyStyle === "retro") {
+      ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+      ctx.fillRect(x + r / 2, y + 2, w - r, 3);
+    }
+  }
+
   function drawObjects() {
     if (!ctx) return;
     for (let li = 0; li < LANES.length; li++) {
@@ -500,27 +535,19 @@ export function createToadRoadGame(
         const front = lane.dir === 1 ? left + lane.width : left;
 
         if (lane.object === "car") {
-          ctx.fillStyle = CAR_COLORS[lane.row] ?? PALETTE.carA;
-          ctx.beginPath();
-          ctx.roundRect(left + 2, y, lane.width - 4, h, 8);
-          ctx.fill();
+          const c = carColor(PALETTE, lane.row);
+          body(left + 2, y, lane.width - 4, h, 8, c, c);
           ctx.fillStyle = PALETTE.bg;
           ctx.fillRect(front - lane.dir * 18 - 5, y + 6, 10, h - 12);
         } else if (lane.object === "truck") {
-          ctx.fillStyle = PALETTE.truck;
-          ctx.beginPath();
-          ctx.roundRect(left + 2, y, lane.width - 4, h, 6);
-          ctx.fill();
+          body(left + 2, y, lane.width - 4, h, 6, PALETTE.truck, PALETTE.truck);
           ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
           const cabX = lane.dir === 1 ? left + lane.width - 32 : left + 2;
           ctx.fillRect(cabX, y, 30, h);
           ctx.fillStyle = PALETTE.bg;
           ctx.fillRect(front - lane.dir * 12 - 4, y + 6, 8, h - 12);
         } else if (lane.object === "log") {
-          ctx.fillStyle = PALETTE.logDark;
-          ctx.beginPath();
-          ctx.roundRect(left, y, lane.width, h, 12);
-          ctx.fill();
+          body(left, y, lane.width, h, 12, PALETTE.logDark, PALETTE.logDark);
           ctx.strokeStyle = PALETTE.log;
           ctx.globalAlpha = 0.6;
           ctx.lineWidth = 2;
@@ -541,7 +568,9 @@ export function createToadRoadGame(
             ctx.lineWidth = 2;
             ctx.beginPath();
             ctx.ellipse(cx, cy, 19, 16, 0, 0, Math.PI * 2);
+            if (PALETTE.bodyStyle === "neon") ctx.globalAlpha = 0.3;
             ctx.fill();
+            ctx.globalAlpha = 1;
             ctx.stroke();
             ctx.beginPath();
             ctx.moveTo(cx - 8, cy);
@@ -596,7 +625,16 @@ export function createToadRoadGame(
     // Frogs already home (no glow).
     for (let i = 0; i < SLOT_COUNT; i++) {
       if (world.slots[i]) {
-        drawFrog(ctx, SLOT_CENTERS[i], CELL / 2, "down", 0.9, 0.9, false);
+        drawFrog(
+          ctx,
+          PALETTE,
+          SLOT_CENTERS[i],
+          CELL / 2,
+          "down",
+          0.9,
+          0.9,
+          false,
+        );
       }
     }
 
@@ -620,7 +658,7 @@ export function createToadRoadGame(
       sx = 1 - squash;
       sy = 1 + squash;
     }
-    drawFrog(ctx, fx, fy, facing, sx, sy, true);
+    drawFrog(ctx, PALETTE, fx, fy, facing, sx, sy, true);
   }
 
   function draw() {
@@ -629,6 +667,10 @@ export function createToadRoadGame(
     drawBands();
     drawObjects();
     drawFrogs();
+    if (PALETTE.scanlines) {
+      ctx.fillStyle = "rgba(0, 0, 0, 0.12)";
+      for (let y = 0; y < H; y += 3) ctx.fillRect(0, y, W, 1);
+    }
   }
 
   function stop() {
@@ -711,6 +753,12 @@ export function createToadRoadGame(
 
   // ── Public API ──────────────────────────────────────────────────────────────
   return {
+    skins: SKIN_IDS,
+    setSkin(id: SkinId) {
+      if (destroyed) return;
+      PALETTE = SKINS[id];
+      draw();
+    },
     pause() {
       if (destroyed || paused || world.state === "gameover") return;
       paused = true;
