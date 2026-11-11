@@ -1,6 +1,6 @@
 # SPEC GJ-toadroad-01 — TOAD ROAD: core
 
-> **Status:** Draft
+> **Status:** Approved
 > **Depends on:** SPEC 06, SPEC 07, SPEC 08
 > **Date:** 2026-11-09
 > **Objective:** Create TOAD ROAD, a hop-across-traffic-and-river game, as a typed engine played at `/games/toadroad/play` with its own leaderboard, playable from the first hop to GAME OVER.
