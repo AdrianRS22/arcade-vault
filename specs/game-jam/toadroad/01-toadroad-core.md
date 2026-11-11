@@ -1,6 +1,6 @@
 # SPEC GJ-toadroad-01 — TOAD ROAD: core
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 06, SPEC 07, SPEC 08
 > **Date:** 2026-11-09
 > **Objective:** Create TOAD ROAD, a hop-across-traffic-and-river game, as a typed engine played at `/games/toadroad/play` with its own leaderboard, playable from the first hop to GAME OVER.
@@ -213,38 +213,38 @@ Before writing code, read `node_modules/next/dist/docs/` for Client Components, 
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` finishes with no errors.
-- [ ] `npm run build` finishes with no errors.
-- [ ] `supabase/migrations/` contains `20261109120000_seed_toadroad.sql`, `npm run db:types` shows no diff, and `games` has the `toadroad` row with 0 scores.
-- [ ] `/games` and `/games/toadroad` show the title TOAD ROAD and its description; the home "GAMES AVAILABLE NOW" rail lists it with the `cover-rana` cover.
-- [ ] `/games/toadroad/play` runs the real engine with the listed controls.
-- [ ] HUD values (SCORE, LIVES, HOME, TIME) always match the engine.
-- [ ] Losing the last life opens the GAME OVER modal with the same score as the HUD; END opens it with the current score; PLAY AGAIN restarts with score 0, 3 lives, HOME `0/5`, TIME `30s`, an empty goal row and the frog at the start.
-- [ ] PAUSE, `P` and `Esc` freeze the game and show PAUSED; resuming does not make cars or logs jump, and the timer does not lose time while paused; switching tab pauses.
-- [ ] Arrow keys and Space do not scroll the page while playing; typing initials in the modal (including `W`, `A`, `S`, `D`) does not affect the game.
-- [ ] Leaving the play page and coming back runs a single loop (normal speed, no console errors).
-- [ ] The canvas uses the neon palette (dark background, cyan river, magenta/yellow/cyan cars, green toad), not plain white on black.
-- [ ] At 375 px wide the canvas fits the CRT with no horizontal scroll, and the HUD does not overflow.
-- [ ] SAVE SCORE shows `SAVING…` then `SAVED — RANK #N`; the score appears in the Hall of Fame tab for TOAD ROAD, in the detail "TOP SCORES" and in home "LATEST SCORES"; the game's plays go up by 1; the Asteroids, Tetris, Arkanoid and Snake leaderboards are unchanged.
-- [ ] Asteroids, Tetris, Arkanoid and Snake still play and save exactly as before; Arkanoid keeps its MUTE button and TOAD ROAD shows none.
-- [ ] No secret or service-role key is used.
-- [ ] The network panel shows no request for images or sounds from `/games/toadroad/` (there are no assets).
-- [ ] A new run shows the toad at the bottom row, column 7 (`x = 375`), 12 rows (goal, 5 river, median, 4 road, start), 5 empty slots and moving traffic from the first frame.
-- [ ] One key press moves the toad exactly one cell; holding a key does not repeat; pressing `←` or `→` at the screen edge does nothing; pressing `↓` on the start row does nothing; `W` `A` `S` `D` behave like the arrows.
-- [ ] Hopping up onto a row it has not reached in this attempt adds exactly 10 points; going back and hopping up again to the same row adds nothing.
-- [ ] Touching a car or truck loses a life, shows the magenta splat and HUD LIVES drops at once; passing through a gap between vehicles is safe.
-- [ ] Hopping onto river water with no log or turtle under the toad's center loses a life with cyan ripples.
-- [ ] Standing on a log or turtles with no key pressed moves the toad sideways at that lane's speed, in that lane's direction; riding it past the left or right edge of the field loses a life.
-- [ ] Hopping from a river row to the median (row 6) puts the toad on a cell center (`(x − 25) % 50 === 0`).
-- [ ] Reaching the goal row inside an empty slot adds `50 + 10 × ceil(seconds left)` points, raises HOME by 1, draws a toad in that slot and starts a new attempt at the start row with TIME `30s`.
-- [ ] Reaching the goal row between slots, or in an already filled slot, loses a life.
-- [ ] TIME counts down once per second from `30s` while the toad lives; at `0s` the toad dies and the next attempt starts at `30s`.
-- [ ] After a death the toad respawns at the start after about 0.9 s; key presses during that time are ignored; the lanes keep moving.
-- [ ] Filling the fifth slot adds 1000 points, shows five toads for about 0.6 s, then empties the slots (HOME `0/5`) and play continues at the same lane speeds.
-- [ ] Lanes never run empty: after 5 minutes of play every road and river lane still has objects crossing the screen and re-entering from the opposite side.
-- [ ] The score never exceeds 9,999,999 in the HUD or in the saved row.
-- [ ] The canvas draws no SCORE, LIVES, TIME, GAME OVER or restart text, and no key restarts the game.
-- [ ] Only the live toad has glow; vehicles, logs and turtles are drawn without `shadowBlur`.
+- [x] `npm run lint` finishes with no errors.
+- [x] `npm run build` finishes with no errors.
+- [x] `supabase/migrations/` contains `20261109120000_seed_toadroad.sql`, `npm run db:types` shows no diff, and `games` has the `toadroad` row with 0 scores.
+- [x] `/games` and `/games/toadroad` show the title TOAD ROAD and its description; the home "GAMES AVAILABLE NOW" rail lists it with the `cover-rana` cover.
+- [x] `/games/toadroad/play` runs the real engine with the listed controls.
+- [x] HUD values (SCORE, LIVES, HOME, TIME) always match the engine.
+- [x] Losing the last life opens the GAME OVER modal with the same score as the HUD; END opens it with the current score; PLAY AGAIN restarts with score 0, 3 lives, HOME `0/5`, TIME `30s`, an empty goal row and the frog at the start.
+- [x] PAUSE, `P` and `Esc` freeze the game and show PAUSED; resuming does not make cars or logs jump, and the timer does not lose time while paused; switching tab pauses.
+- [x] Arrow keys and Space do not scroll the page while playing; typing initials in the modal (including `W`, `A`, `S`, `D`) does not affect the game.
+- [x] Leaving the play page and coming back runs a single loop (normal speed, no console errors).
+- [x] The canvas uses the neon palette (dark background, cyan river, magenta/yellow/cyan cars, green toad), not plain white on black.
+- [x] At 375 px wide the canvas fits the CRT with no horizontal scroll, and the HUD does not overflow.
+- [x] SAVE SCORE shows `SAVING…` then `SAVED — RANK #N`; the score appears in the Hall of Fame tab for TOAD ROAD, in the detail "TOP SCORES" and in home "LATEST SCORES"; the game's plays go up by 1; the Asteroids, Tetris, Arkanoid and Snake leaderboards are unchanged.
+- [x] Asteroids, Tetris, Arkanoid and Snake still play and save exactly as before; Arkanoid keeps its MUTE button and TOAD ROAD shows none.
+- [x] No secret or service-role key is used.
+- [x] The network panel shows no request for images or sounds from `/games/toadroad/` (there are no assets).
+- [x] A new run shows the toad at the bottom row, column 7 (`x = 375`), 12 rows (goal, 5 river, median, 4 road, start), 5 empty slots and moving traffic from the first frame.
+- [x] One key press moves the toad exactly one cell; holding a key does not repeat; pressing `←` or `→` at the screen edge does nothing; pressing `↓` on the start row does nothing; `W` `A` `S` `D` behave like the arrows.
+- [x] Hopping up onto a row it has not reached in this attempt adds exactly 10 points; going back and hopping up again to the same row adds nothing.
+- [x] Touching a car or truck loses a life, shows the magenta splat and HUD LIVES drops at once; passing through a gap between vehicles is safe.
+- [x] Hopping onto river water with no log or turtle under the toad's center loses a life with cyan ripples.
+- [x] Standing on a log or turtles with no key pressed moves the toad sideways at that lane's speed, in that lane's direction; riding it past the left or right edge of the field loses a life.
+- [x] Hopping from a river row to the median (row 6) puts the toad on a cell center (`(x − 25) % 50 === 0`).
+- [x] Reaching the goal row inside an empty slot adds `50 + 10 × ceil(seconds left)` points, raises HOME by 1, draws a toad in that slot and starts a new attempt at the start row with TIME `30s`.
+- [x] Reaching the goal row between slots, or in an already filled slot, loses a life.
+- [x] TIME counts down once per second from `30s` while the toad lives; at `0s` the toad dies and the next attempt starts at `30s`.
+- [x] After a death the toad respawns at the start after about 0.9 s; key presses during that time are ignored; the lanes keep moving.
+- [x] Filling the fifth slot adds 1000 points, shows five toads for about 0.6 s, then empties the slots (HOME `0/5`) and play continues at the same lane speeds.
+- [x] Lanes never run empty: after 5 minutes of play every road and river lane still has objects crossing the screen and re-entering from the opposite side.
+- [x] The score never exceeds 9,999,999 in the HUD or in the saved row.
+- [x] The canvas draws no SCORE, LIVES, TIME, GAME OVER or restart text, and no key restarts the game.
+- [x] Only the live toad has glow; vehicles, logs and turtles are drawn without `shadowBlur`.
 
 ## Decisions
 
