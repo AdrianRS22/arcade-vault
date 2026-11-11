@@ -2,7 +2,6 @@
 
 Maintained by the `game-planner` subagent.
 
-Overall recommended: **NEON DUEL** (`neon-duel`). ⭐ marks the top pick per category.
 
 Note: check similar-name clashes before implementing (`grid-*`, `prism-*`, `glow-*`, `neon-*`) so ids, titles and covers stay distinct.
 
@@ -45,6 +44,7 @@ Note: check similar-name clashes before implementing (`grid-*`, `prism-*`, `glow
 
 ## In progress
 
+Overall recommended: **NEON DUEL** (`neon-duel`). ⭐ marks the top pick per category. — specs drafted 2026-11-11 (game-jam)
 ## Done
 
 - [x] **ASTEROIDS** (`asteroids`) — SHOOTER · yellow
