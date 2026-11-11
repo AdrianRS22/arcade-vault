@@ -31,6 +31,7 @@ This is Next.js 16.4.5 with React 19.3 and has breaking changes versus common tr
 - Specs live in `specs/NN-<slug>.md`. Status flow: `Draft` → `Approved` → `Implemented`. `specs/.spec-config.yml` has `AutoCreateBranch: true`, so `/spec-impl` creates and switches to a `spec-NN-slug` branch; each spec is merged through a PR.
 - `/spec` and `/spec-impl` come from `Klerith/fernando-skills` (`npx skills@latest add Klerith/fernando-skills`). They live in `.claude/skills/` (mirrored in `.agents/skills/`) and are tracked in `skills-lock.json`.
 - `/new-game <references/started-games folder | description>` specs a new playable game with its leaderboard. It builds on `/spec`, writes `specs/NN-<id>-game.md` in `Draft` and stops; implement it afterwards with `/spec-impl`. It is user-invoked only. Its `integration-contract.md` (in `.claude/skills/new-game/`) is the authoritative contract for adding a game.
+- `/spec-impl-game <NN-spec>` is `/spec-impl` for game specs: it reads and follows `.claude/skills/spec-impl/SKILL.md` (same gates, branch and step-by-step pauses), and when the implementation is done it launches `skin-designer` and then `mobile-porter` on the game, **sequentially** (never in parallel), followed by `tsc`, lint and build. It is user-invoked only.
 - Use always the `/frontend-design` skill to make UI interfaces.
 
 ## Subagents
@@ -94,4 +95,4 @@ Project subagents live in `.claude/agents/`.
 - `shared/virtual-keys.ts` — `createVirtualKeys()` dispatches synthetic `keydown`/`keyup` on `window` (ref-counted, with auto-repeat). `app/_components/games/touch-controls.tsx` uses it for the on-screen D-pad and buttons, shown only under `(hover: none) and (pointer: coarse)`; engines need no touch code.
 - Each game has its own folder (`constants.ts`, `types.ts`, `engine.ts`, plus `entities`, `levels`, `pieces` or `sprites` as needed). Static assets go in `public/games/<id>/`.
 - `GamePlayer` and `app/_components/games/game-canvas.tsx` own the score HUD, Pause (`P` / `Esc`), Mute (`M`), the GAME OVER modal and score saving. Engines must not draw or handle those.
-- To add a game: `/new-game` → review and approve the spec → `/spec-impl`.
+- To add a game: `/new-game` → review and approve the spec → `/spec-impl-game`.
