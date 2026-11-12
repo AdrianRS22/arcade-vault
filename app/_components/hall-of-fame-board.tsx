@@ -19,34 +19,34 @@ const fmt = (n: number) => n.toLocaleString("en-US");
 export function HallOfFameBoard({ games, leaderboards }: Props) {
   const { user } = useSession();
   const [tab, setTab] = useState(games[0].id);
-  // Tagged with the player it was loaded for, so a result for a previous
-  // session is never shown under another name.
+  // Tagged with the user it was loaded for, so a result for a previous
+  // session is never shown under another account.
   const [bests, setBests] = useState<{
-    player: string;
+    userId: string;
     data: Record<string, ScoreEntry>;
   } | null>(null);
 
-  const player = user?.name;
+  const userId = user?.id;
   useEffect(() => {
-    if (!player) return;
+    if (!userId) return;
     let cancelled = false;
-    getMyBests(player)
+    getMyBests()
       .then((data) => {
-        if (!cancelled) setBests({ player, data });
+        if (!cancelled) setBests({ userId, data });
       })
       .catch(() => {
-        if (!cancelled) setBests({ player, data: {} });
+        if (!cancelled) setBests({ userId, data: {} });
       });
     return () => {
       cancelled = true;
     };
-  }, [player]);
+  }, [userId]);
 
   const game = games.find((g) => g.id === tab) ?? games[0];
   const rows = leaderboards[game.id] ?? [];
   const [first, second, third] = rows;
   const mine =
-    user && bests?.player === user.name ? bests.data[game.id] : undefined;
+    user && bests?.userId === user.id ? bests.data[game.id] : undefined;
 
   return (
     <div className="av-hall fade-in">

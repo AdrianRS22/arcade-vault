@@ -86,7 +86,7 @@ function PlayableGame({
   game,
   definition,
 }: PlayerProps & { definition: AnyGameDefinition }) {
-  const { user } = useSession();
+  const { user, status } = useSession();
   const engineRef = useRef<GameHandle>(null);
   // Bumped on every restart so a save that finishes late is ignored.
   const runRef = useRef(0);
@@ -97,7 +97,6 @@ function PlayableGame({
   const score = snapshot.score;
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
-  const [name, setName] = useState(user ? user.name : "GUEST");
   const [save, setSave] = useState<SaveState>({ status: "idle" });
   // Server snapshot is muted, so the first client render matches the HTML.
   const muted = useSyncExternalStore(subscribe, isMuted, () => true);
@@ -177,7 +176,7 @@ function PlayableGame({
     setSave({ status: "saving" });
     let next: SaveState;
     try {
-      const result = await saveScore(game.id, name, score);
+      const result = await saveScore(game.id, score);
       next = result.ok
         ? { status: "saved", rank: result.rank }
         : { status: "error", message: result.error };
@@ -202,7 +201,7 @@ function PlayableGame({
         <div className="flex flex-wrap gap-6">
           <div className="hud-stat">
             <div className="l">Player</div>
-            <div className="v text-ink">{name}</div>
+            <div className="v text-ink">{user ? user.name : "GUEST"}</div>
           </div>
           <div className="hud-stat">
             <div className="l">Score</div>
@@ -325,25 +324,25 @@ function PlayableGame({
               </>
             ) : (
               <>
-                <div className="input-row">
-                  <input
-                    value={name}
-                    onChange={(e) =>
-                      setName(e.target.value.toUpperCase().slice(0, 10))
-                    }
-                    placeholder="YOUR INITIALS"
-                    aria-label="Your initials"
-                    disabled={save.status === "saving"}
-                  />
-                  <button
-                    type="button"
-                    className="btn yellow"
-                    onClick={handleSave}
-                    disabled={save.status === "saving"}
+                {user ? (
+                  <div className="input-row">
+                    <button
+                      type="button"
+                      className="btn yellow w-full"
+                      onClick={handleSave}
+                      disabled={save.status === "saving"}
+                    >
+                      {save.status === "saving" ? "SAVING…" : "SAVE SCORE"}
+                    </button>
+                  </div>
+                ) : status === "ready" ? (
+                  <Link
+                    href={`/login?next=/games/${game.id}/play`}
+                    className="btn yellow w-full"
                   >
-                    {save.status === "saving" ? "SAVING…" : "SAVE SCORE"}
-                  </button>
-                </div>
+                    SIGN IN TO SAVE
+                  </Link>
+                ) : null}
                 {save.status === "error" && (
                   <p className="save-error" role="alert">
                     {save.message}

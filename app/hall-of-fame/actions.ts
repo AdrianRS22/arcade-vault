@@ -1,26 +1,31 @@
 "use server";
 
 import { getPlayerBests, type ScoreEntry } from "@/app/data/scores";
-
-// Same rule as the database (`public.scores.player`) and `saveScore`.
-const PLAYER_PATTERN = /^[A-Z0-9_]{1,10}$/;
+import { createClient } from "@/lib/supabase/server";
 
 /**
  * The signed-in player's best entry per game, keyed by game id.
  *
- * The session lives in the browser, so the server cannot know the player at
- * render time: the Hall of Fame board asks for it here once it knows the name.
- * Anything that cannot be loaded returns `{}`, which hides the "YOUR BEST" row.
+ * The player comes from the session, never from the client: the user is
+ * resolved from the auth cookie and the username from their `profiles` row.
+ * Guests, or anything that cannot be loaded, return `{}`, which hides the
+ * "YOUR BEST" row.
  */
-export async function getMyBests(
-  player: string,
-): Promise<Record<string, ScoreEntry>> {
-  const name =
-    typeof player === "string" ? player.trim().toUpperCase().slice(0, 10) : "";
-  if (!PLAYER_PATTERN.test(name)) return {};
-
+export async function getMyBests(): Promise<Record<string, ScoreEntry>> {
   try {
-    return await getPlayerBests(name);
+    const supabase = await createClient();
+    const { data: auth } = await supabase.auth.getUser();
+    if (!auth.user) return {};
+
+    // RLS only lets a user read their own profile row.
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username")
+      .eq("id", auth.user.id)
+      .maybeSingle();
+    if (!profile?.username) return {};
+
+    return await getPlayerBests(profile.username);
   } catch (e) {
     console.error("[getMyBests] failed:", e);
     return {};
