@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -21,6 +22,8 @@ export default function OnboardingPage({
 async function OnboardingGate({
   searchParams,
 }: Pick<PageProps<"/onboarding">, "searchParams">) {
+  // Per-request data (session cookie), never prerendered.
+  await connection();
   const { next: rawNext } = await searchParams;
   const next = safeNext(Array.isArray(rawNext) ? rawNext[0] : rawNext);
 

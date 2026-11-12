@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -20,6 +21,8 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
 async function LoginForm({
   searchParams,
 }: Pick<PageProps<"/login">, "searchParams">) {
+  // Per-request data (session cookie), never prerendered.
+  await connection();
   const { mode, next: rawNext, error } = await searchParams;
   const first = (v: string | string[] | undefined) =>
     Array.isArray(v) ? v[0] : v;
