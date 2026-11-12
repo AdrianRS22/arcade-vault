@@ -310,6 +310,34 @@ a {
 .av-nav .hamburger {
   display: none;
 }
+.av-nav .user-menu {
+  position: relative;
+}
+.av-nav .user-menu-list {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 100%;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  box-shadow: 0 0 16px rgba(0, 245, 255, 0.15);
+  z-index: 70;
+}
+.av-nav .user-menu-list button {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  white-space: nowrap;
+  font-family: var(--pixel);
+  font-size: 10px;
+  color: var(--ink-dim);
+}
+.av-nav .user-menu-list button:hover,
+.av-nav .user-menu-list button:focus-visible {
+  color: var(--magenta);
+  background: rgba(255, 255, 255, 0.04);
+}
 
 @media (max-width: 840px) {
   .av-nav {
@@ -359,6 +387,22 @@ a {
   font-size: 11px;
   color: var(--ink-dim);
   border-bottom: 1px dashed var(--line-2);
+}
+.av-mobile-panel .mobile-user {
+  padding: 14px 12px 6px;
+  font-size: 11px;
+}
+.av-mobile-panel .mobile-signout {
+  padding: 14px 12px;
+  text-align: left;
+  font-family: var(--pixel);
+  font-size: 11px;
+  color: var(--ink-dim);
+  border-bottom: 1px dashed var(--line-2);
+}
+.av-mobile-panel .mobile-signout:hover,
+.av-mobile-panel .mobile-signout:focus-visible {
+  color: var(--magenta);
 }
 .av-mobile-panel a.active {
   color: var(--cyan);

@@ -8,7 +8,7 @@ export type AuthTab = "in" | "up";
 
 export function AuthForm({ initialTab = "in" }: { initialTab?: AuthTab }) {
   const router = useRouter();
-  const { signIn, signOut } = useSession();
+  const { signOut } = useSession();
   const [tab, setTab] = useState<AuthTab>(initialTab);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -16,12 +16,12 @@ export function AuthForm({ initialTab = "in" }: { initialTab?: AuthTab }) {
 
   const submit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    signIn(username || "PLAYER1");
+    // Temporary: real sign-in arrives in Step 4.
     router.push("/");
   };
 
   const playAsGuest = () => {
-    signOut();
+    void signOut();
     router.push("/");
   };
 
