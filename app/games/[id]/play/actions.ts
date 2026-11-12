@@ -40,7 +40,7 @@ export async function saveScore(
       return { ok: false, error: "Sign in to save your score." };
     }
     if (error?.code === "22023" && /username/.test(error.message)) {
-      return { ok: false, error: "Choose a username before saving scores." };
+      return { ok: false, error: "Choose your username first." };
     }
     if (error || data === null) {
       console.error(

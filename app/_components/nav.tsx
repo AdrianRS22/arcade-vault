@@ -10,7 +10,7 @@ export function Nav() {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
-  const { user, signOut } = useSession();
+  const { user, needsUsername, signOut } = useSession();
 
   // Close the user menu on outside click or Escape.
   useEffect(() => {
@@ -71,7 +71,11 @@ export function Nav() {
           <span className="coin"></span>
           <span>CREDITS · 03</span>
         </div>
-        {user ? (
+        {user && needsUsername ? (
+          <Link href="/onboarding" className="btn auth-btn" onClick={close}>
+            CHOOSE NAME
+          </Link>
+        ) : user ? (
           <div className="user-menu" ref={menuRef}>
             <button
               type="button"
@@ -137,7 +141,20 @@ export function Nav() {
         </Link>
         {user ? (
           <>
-            <div className="mobile-user pixel neon-cyan">{user.name}</div>
+            {needsUsername ? (
+              <Link
+                href="/onboarding"
+                className={
+                  "mobile-user pixel neon-cyan" +
+                  (pathname.startsWith("/onboarding") ? " active" : "")
+                }
+                onClick={close}
+              >
+                CHOOSE NAME
+              </Link>
+            ) : (
+              <div className="mobile-user pixel neon-cyan">{user.name}</div>
+            )}
             <button
               type="button"
               className="mobile-signout"
