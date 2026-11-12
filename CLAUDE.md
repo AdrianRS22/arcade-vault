@@ -44,13 +44,14 @@ Project subagents live in `.claude/agents/` (tools, write scope and rules are in
 - `game-jam` ([definition](.claude/agents/game-jam.md)): turns a game description into 2–3 phased `Draft` specs in `specs/game-jam/<id>/`. Autonomous; never writes code.
 - `skin-designer` ([definition](.claude/agents/skin-designer.md)): adds the missing `classic` / `neon` / `retro` skins to **one** game inside `lib/games/<id>/`. For several games use `/skin-designer`.
 - `mobile-porter` ([definition](.claude/agents/mobile-porter.md)): audits and fixes **one** game's touch/mobile layout against SPEC 11 with Playwright (375×812 and 1440×900). Run one game at a time.
+- `security-auditor` ([definition](.claude/agents/security-auditor.md)): read-only audit of the database (RLS, policies, grants, SECURITY DEFINER functions, advisors, migration drift) and the app (headers, `proxy.ts` route protection, Server Actions, redirects, secrets, `npm audit`). Has project memory and keeps `references/security-report.md` with stable `SEC-NNN` findings. Modes: `full`, `db`, `app`, `diff`, `accept SEC-NNN <reason>`, `resolve SEC-NNN`. Never edits code or applies migrations; implement its recommendations through `/spec`. Run it after changes to auth, migrations, Server Actions, route handlers, `proxy.ts` or `next.config.ts`, and before merging a PR.
 
 ## Tooling
 
 - A `PostToolUse` hook (`.claude/settings.json`) runs `.claude/hooks/format-and-lint.mjs` after every `Write|Edit`: Prettier, then `eslint --fix` on the touched file. Exit code 2 feeds ESLint errors back; fix them, do not bypass the hook.
 - The Supabase MCP server is configured in `.mcp.json` (project `ekupeshkawfihlnpmpvi`) and enabled in `.claude/settings.local.json`.
 - Save all Playwright screenshots in `.playwright-screenshots/` and keep them.
-- `references/` holds prototypes and reference games (`started-games/`, `templates/`, `source-assets/`, `gamepad-assets/` for the SPEC 12 touch-controls look). It is ESLint-ignored and never modified, except `references/game-suggestions-todo.md` (maintained by the `game-planner` subagent) and `references/implemented-games.md` (the catalog, updated when a game ships).
+- `references/` holds prototypes and reference games (`started-games/`, `templates/`, `source-assets/`, `gamepad-assets/` for the SPEC 12 touch-controls look). It is ESLint-ignored and never modified, except `references/game-suggestions-todo.md` (maintained by the `game-planner` subagent) `references/implemented-games.md` (the catalog, updated when a game ships) and `references/security-report.md` (maintained by the `security-auditor` subagent).
 
 ## Architecture notes
 
