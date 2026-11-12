@@ -190,6 +190,7 @@ export type Database = {
       }
     }
     Functions: {
+      set_username: { Args: { p: string }; Returns: undefined }
       submit_score: {
         Args: { p_game_id: string; p_score: number }
         Returns: number
