@@ -86,7 +86,7 @@ function PlayableGame({
   game,
   definition,
 }: PlayerProps & { definition: AnyGameDefinition }) {
-  const { user, status } = useSession();
+  const { user, status, needsUsername } = useSession();
   const engineRef = useRef<GameHandle>(null);
   // Bumped on every restart so a save that finishes late is ignored.
   const runRef = useRef(0);
@@ -344,6 +344,13 @@ function PlayableGame({
                   <p className="mono m-0 text-[11px] tracking-[0.06em] text-ink-faint">
                     A score of 0 is not saved.
                   </p>
+                ) : user && needsUsername ? (
+                  <Link
+                    href={`/onboarding?next=/games/${game.id}/play`}
+                    className="btn yellow w-full"
+                  >
+                    CHOOSE A NAME TO SAVE
+                  </Link>
                 ) : user ? (
                   <div className="input-row">
                     <button

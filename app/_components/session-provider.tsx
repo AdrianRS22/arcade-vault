@@ -15,14 +15,20 @@ import {
 import { createClient } from "@/lib/supabase/client";
 import type { Database } from "@/types/supabase";
 
-/** `name` is the profile username (uppercase, max 10 chars). */
-export type SessionUser = { id: string; name: string };
+/**
+ * `name` is the profile username (uppercase, max 10 chars). While the profile
+ * has none (OAuth, before onboarding) `name` is a placeholder and
+ * `needsUsername` is true.
+ */
+export type SessionUser = { id: string; name: string; needsUsername: boolean };
 
 type SessionStatus = "loading" | "ready";
 
 type SessionContextValue = {
   user: SessionUser | null;
   status: SessionStatus;
+  /** Signed in, but the profile has no username yet (SPEC 14 onboarding). */
+  needsUsername: boolean;
   signOut: () => Promise<void>;
 };
 
@@ -41,7 +47,12 @@ async function loadUser(
     .select("username")
     .eq("id", id)
     .maybeSingle();
-  return { id, name: data?.username ?? FALLBACK_NAME };
+  const username = data?.username ?? null;
+  return {
+    id,
+    name: username ?? FALLBACK_NAME,
+    needsUsername: username === null,
+  };
 }
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
@@ -49,7 +60,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<SessionStatus>("loading");
   const supabaseRef = useRef<SupabaseClient<Database> | null>(null);
   const syncRef = useRef<(() => void) | null>(null);
-  const hasUserRef = useRef(false);
+  // True while a re-check on navigation is needed: signed out, or signed in
+  // without a username. Server Action redirects (sign-in, onboarding) do not
+  // remount this provider.
+  const staleRef = useRef(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -60,10 +74,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const apply = async (id: string | null) => {
       const next = id ? await loadUser(supabase, id) : null;
       if (!active) return;
-      hasUserRef.current = next !== null;
+      staleRef.current = next === null || next.needsUsername;
       // Keep the same object when nothing changed (token refreshes).
       setUser((prev) =>
-        prev?.id === next?.id && prev?.name === next?.name ? prev : next,
+        prev?.id === next?.id &&
+        prev?.name === next?.name &&
+        prev?.needsUsername === next?.needsUsername
+          ? prev
+          : next,
       );
       setStatus("ready");
     };
@@ -89,11 +107,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // A Server Action sign-in redirects without remounting this provider, and
-  // the browser client does not see the new cookies by itself. Re-check on
-  // navigation while signed out (no cookie means no network call).
+  // A Server Action sign-in (or username choice) redirects without remounting
+  // this provider, and the browser client does not see the new cookies by
+  // itself. Re-check on navigation while signed out (no cookie means no
+  // network call) or while the username is still missing.
   useEffect(() => {
-    if (status === "ready" && !hasUserRef.current) syncRef.current?.();
+    if (status === "ready" && staleRef.current) syncRef.current?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
@@ -103,7 +122,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, status, signOut }),
+    () => ({
+      user,
+      status,
+      needsUsername: user?.needsUsername ?? false,
+      signOut,
+    }),
     [user, status, signOut],
   );
 
