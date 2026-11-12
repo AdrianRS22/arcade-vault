@@ -1,6 +1,7 @@
 "use client";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { usePathname } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -47,6 +48,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [status, setStatus] = useState<SessionStatus>("loading");
   const supabaseRef = useRef<SupabaseClient<Database> | null>(null);
+  const syncRef = useRef<(() => void) | null>(null);
+  const hasUserRef = useRef(false);
+  const pathname = usePathname();
 
   useEffect(() => {
     const supabase = createClient();
@@ -56,6 +60,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     const apply = async (id: string | null) => {
       const next = id ? await loadUser(supabase, id) : null;
       if (!active) return;
+      hasUserRef.current = next !== null;
       // Keep the same object when nothing changed (token refreshes).
       setUser((prev) =>
         prev?.id === next?.id && prev?.name === next?.name ? prev : next,
@@ -64,7 +69,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Validates the session against the Auth server.
-    supabase.auth.getUser().then(({ data }) => apply(data.user?.id ?? null));
+    const sync = () =>
+      void supabase.auth
+        .getUser()
+        .then(({ data }) => apply(data.user?.id ?? null));
+    syncRef.current = sync;
+    sync();
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       // INITIAL_SESSION is covered by getUser() above. Defer the work: the
@@ -78,6 +88,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       sub.subscription.unsubscribe();
     };
   }, []);
+
+  // A Server Action sign-in redirects without remounting this provider, and
+  // the browser client does not see the new cookies by itself. Re-check on
+  // navigation while signed out (no cookie means no network call).
+  useEffect(() => {
+    if (status === "ready" && !hasUserRef.current) syncRef.current?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const signOut = useCallback(async () => {
     await supabaseRef.current?.auth.signOut();
