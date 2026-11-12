@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Arcade Vault: a platform to play games online and compete for the highest score. It follows Spec Driven Design (`/spec` and `/spec-impl` skills). Specs 01–12 are all `Implemented`; game-jam specs live in `specs/game-jam/<id>/` (each has a `README.md`; see the spec's `Status` line).
 
-Routes: `/` (home), `/games` (library with category filter), `/games/[id]` (detail + leaderboard), `/games/[id]/play` (player), `/hall-of-fame`, `/about` (contact form), `/login`, `GET /api/health`.
+Routes: `/` (home), `/games` (library with category filter), `/games/[id]` (detail + leaderboard), `/games/[id]/play` (player), `/hall-of-fame`, `/about` (contact form), `/login` (sign in / create account), `/forgot-password`, `/reset-password` (needs a session), `GET /auth/confirm` (email link handler), `GET /api/health`.
 
 Playable games: see the catalog in [Implemented games](references/implemented-games.md). To add a new one, follow the `/new-game` integration contract (`.claude/skills/new-game/integration-contract.md`).
 
@@ -59,10 +59,13 @@ Project subagents live in `.claude/agents/` (tools, write scope and rules are in
 - Components: route-shared ones in `app/_components/` (subfolders `home/`, `about/`, `games/`).
 - Server data in `app/data/` (`games.ts`, `scores.ts`, `activity.ts`) uses `"use cache"` with `cacheTag("games" | "scores")` and `cacheLife("hours")`. `categories.ts` is client-safe on purpose (no server-only imports).
 - Server Actions:
-  - `app/games/[id]/play/actions.ts` — `saveScore` calls the `submit_score` RPC, then `updateTag("scores")` and `updateTag("games")`.
-  - `app/hall-of-fame/actions.ts` — `getMyBests` (player's best per game).
+  - `app/games/[id]/play/actions.ts` — `saveScore(gameId, score)` calls the `submit_score` RPC (the player comes from the session, never from the client), then `updateTag("scores")` and `updateTag("games")`.
+  - `app/hall-of-fame/actions.ts` — `getMyBests()` (the signed-in player's best per game; `{}` for guests).
+  - `app/login/actions.ts` — `signUp`, `signIn`, `signOut`, `requestPasswordReset`, `updatePassword` (state types in `app/login/auth-state.ts`; a `"use server"` file can only export async functions).
   - `app/about/actions.ts` — `sendContactMessage` via Resend, with `emails/contact-email.tsx` rendered through `render()`.
-- Session: `SessionProvider` / `useSession` is client-only and there is no Auth yet. The player name (uppercase, max 10 chars, `^[A-Z0-9_]{1,10}$`) lives in the browser and is validated again in the server action and the database.
+- Session: `SessionProvider` / `useSession` is client-only and exposes `{ user: { id, name } | null, status: "loading" | "ready", signOut }`. It reads the Supabase session with the browser client (`getUser()` + `onAuthStateChange`) and loads `profiles.username` as `name`; it re-checks the session on route changes while signed out, because a Server Action sign-in does not remount it.
+- Auth (SPEC 13, Supabase Auth email + password): `proxy.ts` + `lib/supabase/proxy.ts` only refresh the session cookies (no route protection). Sign-up requires a unique username (`^[A-Z0-9_]{1,10}$`, stored uppercase in `profiles`) and a password of at least 8 characters; rules are shared in `lib/auth/validation.ts` (client-safe, includes `safeNext` for `?next=`) and enforced again by the actions and the database. Email links (confirm signup, reset password) land on `app/auth/confirm/route.ts`. Read the session only in dynamic code or inside `<Suspense>`, never inside `"use cache"`. Guests can play but cannot save scores. Auth screens share `app/_components/auth-ui.tsx`.
+- Auth dashboard setup (manual, not in code): Auth → Email: confirm email on, minimum password 8; URL Configuration: Site URL plus `http://localhost:3000/**` and the production URL; Confirm signup / Reset password templates linking to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup` and `…&type=recovery&next=/reset-password`; custom SMTP with Resend (without a verified domain it only delivers to the account owner).
 - Styling: Tailwind CSS v4, wired through a custom Turbopack rule in `next.config.ts` (`@tailwindcss/turbopack` loader for `*.css`). The theme is dark-only retro/neon in `app/globals.css`: tokens on `:root`, exposed to Tailwind via `@theme inline` (`bg`, `ink`, `cyan`, `magenta`, `yellow`, `green`, `gold`, `font-pixel`, `font-mono`…), plus many hand-written classes (`.btn`, `.crt`, `.hud-stat`, `cover-*`…).
 - Fonts: Press Start 2P, JetBrains Mono and Courier Prime via `next/font/google`, exposed as CSS variables in the root layout.
 - TypeScript is `strict`. Path alias `@/*` maps to the repo root (not `src/`).
@@ -74,7 +77,7 @@ Project subagents live in `.claude/agents/` (tools, write scope and rules are in
   - `lib/supabase/client.ts` — `createClient()` for Client Components.
   - `lib/supabase/public.ts` — `createPublicClient()`, cookie-less, safe inside `"use cache"` for public reads.
   - `lib/supabase/env.ts` — validates the environment variables.
-- Schema (`supabase/migrations/`): tables `games` and `scores` (RLS: readable by everyone; writes only through the `submit_score` function), views `games_with_best`, `player_bests`, `top_players_today`. Scores are integers in `0..9,999,999`.
+- Schema (`supabase/migrations/`): tables `games`, `scores` (RLS: readable by everyone; `user_id` references `auth.users`; writes only through `submit_score(p_game_id, p_score)`, executable by `authenticated` only, which takes the player from `profiles.username`) and `profiles` (one row per auth user, created by the `handle_new_user()` trigger; RLS lets a user read only their own row; `username` is nullable until chosen), RPC `username_available(p)`, views `games_with_best`, `player_bests`, `top_players_today`. Scores are integers in `0..9,999,999`.
 - A new game only needs a seed migration; `games`, `scores`, `submit_score`, the views and `saveScore` are generic per `game_id`.
 - Env vars: copy `.env.example` to `.env.local` (Supabase URL and publishable key, `SUPABASE_ACCESS_TOKEN` for the CLI only, Resend vars for the contact form). Never add a secret / service-role key to the code or env files.
 - `GET /api/health` checks that Supabase is reachable (`200 {ok, latencyMs}` or `503`).
