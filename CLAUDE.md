@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Arcade Vault: a platform to play games online and compete for the highest score. It follows Spec Driven Design (`/spec` and `/spec-impl` skills). Specs 01–10 are all `Implemented`.
+Arcade Vault: a platform to play games online and compete for the highest score. It follows Spec Driven Design (`/spec` and `/spec-impl` skills). Specs 01–12 are all `Implemented`; game-jam specs live in `specs/game-jam/<id>/` (each has a `README.md`; see the spec's `Status` line).
 
 Routes: `/` (home), `/games` (library with category filter), `/games/[id]` (detail + leaderboard), `/games/[id]/play` (player), `/hall-of-fame`, `/about` (contact form), `/login`, `GET /api/health`.
 
-Playable games: See [Implemented games](references/implemented-games.md) when you need to check which games are implemented and how to implement new ones.
+Playable games: see the catalog in [Implemented games](references/implemented-games.md). To add a new one, follow the `/new-game` integration contract (`.claude/skills/new-game/integration-contract.md`).
 
 ## Commands
 
@@ -32,33 +32,25 @@ This is Next.js 16.4.5 with React 19.3 and has breaking changes versus common tr
 - `/spec` and `/spec-impl` come from `Klerith/fernando-skills` (`npx skills@latest add Klerith/fernando-skills`). They live in `.claude/skills/` (mirrored in `.agents/skills/`) and are tracked in `skills-lock.json`.
 - `/new-game <references/started-games folder | description>` specs a new playable game with its leaderboard. It builds on `/spec`, writes `specs/NN-<id>-game.md` in `Draft` and stops; implement it afterwards with `/spec-impl`. It is user-invoked only. Its `integration-contract.md` (in `.claude/skills/new-game/`) is the authoritative contract for adding a game.
 - `/spec-impl-game <NN-spec>` is `/spec-impl` for game specs: it reads and follows `.claude/skills/spec-impl/SKILL.md` (same gates, branch and step-by-step pauses), and when the implementation is done it launches `skin-designer` and then `mobile-porter` on the game, **sequentially** (never in parallel), followed by `tsc`, lint and build. It is user-invoked only.
-- Use always the `/frontend-design` skill to make UI interfaces.
+- `/skin-designer <id...|all>` makes sure the games have the `classic`, `neon` and `retro` skins. Subagents cannot launch subagents, so this skill launches one `skin-designer` per game **in parallel**, then runs `tsc`, lint and build once. It is user-invoked only.
+- Game-jam specs (`specs/game-jam/<id>/`, written by the `game-jam` agent) are phased (`01-<id>-core.md`, `02-…`); implement them with `/spec-impl` or `/spec-impl-game`.
+- User-level skills (in `~/.claude/skills/`): always use `/frontend-design` for UI; `/worktree <instructions>` runs a task in an isolated git worktree in `.trees/`.
 
 ## Subagents
 
-Project subagents live in `.claude/agents/`.
+Project subagents live in `.claude/agents/` (tools, write scope and rules are in each definition file).
 
-- `game-planner` (`.claude/agents/game-planner.md`): plans and decides which new game fits the platform. Use it **before** `/new-game` whenever the question is "what game should we add next?".
-  - Reads the catalog (`references/implemented-games.md`), `lib/games/registry.ts`, the specs and the `/new-game` integration contract, then returns 2–3 scored candidates, one recommendation and a ready-to-paste `/new-game "..."` command.
-  - Has project memory (`memory: project`) in `.claude/agent-memory/game-planner/` (`MEMORY.md` index + `suggestions.md` log), so it never repeats a previous suggestion. Tell it the outcome ("I chose X", "reject Y") to keep the status current.
-  - Keeps the To Do in `references/game-suggestions-todo.md` (`Pending` / `In progress` / `Done` / `Discarded`). It may only write there and in its memory folder; it never writes specs or code.
-- `game-jam` (`.claude/agents/game-jam.md`): given a **game description** (the game you want built), it writes 2–3 complete phased specs (`01-<id>-core.md`, `02-<id>-progression.md`, optional `03-…`) plus a `README.md` in `specs/game-jam/<id>/`, in the style of specs 08–10.
-  - Works autonomously (no questions); what the description gives is marked "Provided (game jam)" and every gap it fills or adaptation it makes is marked "Agent's choice (game jam)" in Decisions for the user to review. Specs are always `Draft`.
-  - May only write inside `specs/game-jam/<id>/`; never code, migrations or assets. Implement a spec afterwards with `/spec-impl`.
-- `skin-designer` (`.claude/agents/skin-designer.md`): given **one game id**, checks that the game has the `classic` (default), `neon` and `retro` skins and implements whatever is missing in `lib/games/<id>/` (`skins.ts` plus engine changes). If the game already has them it changes nothing.
-  - Subagents cannot launch subagents, so for several games use the user-invoked skill `/skin-designer <id...|all>` (`.claude/skills/skin-designer/`): it launches one `skin-designer` per game **in parallel**, then runs `tsc`, lint and build once.
-  - May only write inside `lib/games/<id>/` (and `public/games/<id>/`); the shared skin platform (`lib/games/shared/skins.ts`, `GameOptions` in `lib/games/types.ts`, the SKIN selector in `GamePlayer`) is never edited by it. The skin is saved per game in `localStorage` as `av:skin:<id>`.
-
-- `mobile-porter` (`.claude/agents/mobile-porter.md`): given **one game id**, audits it against SPEC 11 with Playwright mobile emulation (375×812, touch) and desktop (1440×900), and fixes its `touch` layout or coarse-pointer CSS if something fails. If the game already passes it changes nothing.
-  - Saves screenshots in `.playwright-screenshots/` (`mobile-porter-<id>-mobile.png` / `-desktop.png`).
-  - May only edit the game's `touch` entry in `lib/games/registry.ts` and coarse-pointer CSS in `app/globals.css`; it never touches engines, `createInput` or the shared touch platform (reports those as blockers). Run it one game at a time.
+- `game-planner` ([definition](.claude/agents/game-planner.md)): scores 2–3 candidates for the next game and recommends one with a ready `/new-game` command. Has project memory and maintains `references/game-suggestions-todo.md`. Use it **before** `/new-game`.
+- `game-jam` ([definition](.claude/agents/game-jam.md)): turns a game description into 2–3 phased `Draft` specs in `specs/game-jam/<id>/`. Autonomous; never writes code.
+- `skin-designer` ([definition](.claude/agents/skin-designer.md)): adds the missing `classic` / `neon` / `retro` skins to **one** game inside `lib/games/<id>/`. For several games use `/skin-designer`.
+- `mobile-porter` ([definition](.claude/agents/mobile-porter.md)): audits and fixes **one** game's touch/mobile layout against SPEC 11 with Playwright (375×812 and 1440×900). Run one game at a time.
 
 ## Tooling
 
 - A `PostToolUse` hook (`.claude/settings.json`) runs `.claude/hooks/format-and-lint.mjs` after every `Write|Edit`: Prettier, then `eslint --fix` on the touched file. Exit code 2 feeds ESLint errors back; fix them, do not bypass the hook.
 - The Supabase MCP server is configured in `.mcp.json` (project `ekupeshkawfihlnpmpvi`) and enabled in `.claude/settings.local.json`.
 - Save all Playwright screenshots in `.playwright-screenshots/` and keep them.
-- `references/` holds prototypes and reference games (`started-games/`, `templates/`, `source-assets/`). It is ESLint-ignored and never modified, except `references/game-suggestions-todo.md`, which the `game-planner` subagent maintains.
+- `references/` holds prototypes and reference games (`started-games/`, `templates/`, `source-assets/`, `gamepad-assets/` for the SPEC 12 touch-controls look). It is ESLint-ignored and never modified, except `references/game-suggestions-todo.md` (maintained by the `game-planner` subagent) and `references/implemented-games.md` (the catalog, updated when a game ships).
 
 ## Architecture notes
 
@@ -93,6 +85,7 @@ Project subagents live in `.claude/agents/`.
 - `registry.ts` — `defineGame<S>()` entries keyed by `games.id`: lazy `load`, `initialSnapshot`, `hud`, `controls`, `ariaLabel`, optional `sound` and a required `touch` layout (`dpad` arrows, action `buttons`, `repeat` codes). A catalog row with no entry renders "NOT PLAYABLE YET".
 - `shared/input.ts` and `shared/audio.ts` (global mute flag, muted by default, `createSoundBank`).
 - `shared/virtual-keys.ts` — `createVirtualKeys()` dispatches synthetic `keydown`/`keyup` on `window` (ref-counted, with auto-repeat). `app/_components/games/touch-controls.tsx` uses it for the on-screen D-pad and buttons, shown only under `(hover: none) and (pointer: coarse)`; engines need no touch code.
-- Each game has its own folder (`constants.ts`, `types.ts`, `engine.ts`, plus `entities`, `levels`, `pieces` or `sprites` as needed). Static assets go in `public/games/<id>/`.
+- `shared/skins.ts` — skin ids (`classic` default, `neon`, `retro`); a game declares `skins` in `GameOptions` (`types.ts`) and implements them in its own `skins.ts`. `GamePlayer` has the SKIN selector and saves the choice in `localStorage` as `av:skin:<id>`.
+- Each game has its own folder (`constants.ts`, `types.ts`, `engine.ts`, `skins.ts`, plus `entities`, `levels`, `pieces`, `lanes` or `sprites` as needed). Static assets go in `public/games/<id>/`.
 - `GamePlayer` and `app/_components/games/game-canvas.tsx` own the score HUD, Pause (`P` / `Esc`), Mute (`M`), the GAME OVER modal and score saving. Engines must not draw or handle those.
 - To add a game: `/new-game` → review and approve the spec → `/spec-impl-game`.
