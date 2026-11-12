@@ -25,11 +25,24 @@ export function validateEmail(value: string): string | null {
   return null;
 }
 
+/** Shown as a hint under the password fields and in `weak_password` errors. */
+export const PASSWORD_REQUIREMENTS = `At least ${MIN_PASSWORD_LENGTH} characters, with a lowercase letter, an uppercase letter, a number and a symbol.`;
+
+/**
+ * Mirrors the Supabase dashboard rule (lowercase, uppercase, digits and
+ * symbols). Only applied on sign-up and password change, never on sign-in.
+ */
 export function validatePassword(value: string): string | null {
+  const missing: string[] = [];
   if (value.length < MIN_PASSWORD_LENGTH) {
-    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+    missing.push(`${MIN_PASSWORD_LENGTH}+ characters`);
   }
-  return null;
+  if (!/[a-z]/.test(value)) missing.push("a lowercase letter");
+  if (!/[A-Z]/.test(value)) missing.push("an uppercase letter");
+  if (!/[0-9]/.test(value)) missing.push("a number");
+  if (!/[^A-Za-z0-9]/.test(value)) missing.push("a symbol");
+  if (missing.length === 0) return null;
+  return `Password needs ${missing.join(", ")}.`;
 }
 
 /**
@@ -40,7 +53,7 @@ export function validatePassword(value: string): string | null {
 export function safeNext(value: unknown): string {
   if (typeof value !== "string") return "/";
   if (!/^\/(?![/\\])/.test(value)) return "/";
-   
+
   if (/[\u0000-\u001f\u007f\\]/.test(value)) return "/";
   return value;
 }

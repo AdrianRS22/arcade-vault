@@ -9,6 +9,7 @@ import type { AuthFormState } from "@/app/login/auth-state";
 import {
   MIN_PASSWORD_LENGTH,
   normalizeUsername,
+  PASSWORD_REQUIREMENTS,
   validateUsername,
 } from "@/lib/auth/validation";
 import { createClient } from "@/lib/supabase/client";
@@ -242,9 +243,14 @@ function SignUpForm() {
           placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
           aria-invalid={fieldError("password") ? true : undefined}
           aria-describedby={
-            fieldError("password") ? "signup-password-error" : undefined
+            fieldError("password")
+              ? "signup-password-error"
+              : "signup-password-hint"
           }
         />
+        <p id="signup-password-hint" className="field-hint">
+          {PASSWORD_REQUIREMENTS}
+        </p>
         <FieldError
           id="signup-password-error"
           message={fieldError("password")}
