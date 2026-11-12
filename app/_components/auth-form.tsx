@@ -23,7 +23,58 @@ const IDLE: AuthFormState = { status: "idle" };
 const NOTICES: Record<string, string> = {
   invalid_link: "That link is not valid. Request a new one.",
   link_expired: "That link has expired or was already used. Request a new one.",
+  oauth: "Sign-in with that provider did not complete. Try again.",
 };
+
+type OAuthProvider = "google" | "github";
+
+const PROVIDERS: { id: OAuthProvider; label: string }[] = [
+  { id: "google", label: "GOOGLE" },
+  { id: "github", label: "GITHUB" },
+];
+
+function OAuthButtons({ next }: { next: string }) {
+  const [pending, setPending] = useState<OAuthProvider | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function start(provider: OAuthProvider) {
+    setPending(provider);
+    setError(null);
+    const { error } = await createClient().auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
+    });
+    // On success the browser leaves for the provider; only failures return.
+    if (error) {
+      setPending(null);
+      setError("Could not start the sign-in. Try again.");
+    }
+  }
+
+  return (
+    <>
+      <div className="auth-divider" role="separator">
+        OR CONTINUE WITH
+      </div>
+      <div className="social">
+        {PROVIDERS.map(({ id, label }) => (
+          <button
+            key={id}
+            type="button"
+            className="btn"
+            disabled={pending !== null}
+            onClick={() => void start(id)}
+          >
+            {pending === id ? "REDIRECTING…" : label}
+          </button>
+        ))}
+      </div>
+      <FormError message={error ?? undefined} />
+    </>
+  );
+}
 
 function SignInForm({ next }: { next: string }) {
   const [state, formAction] = useActionState(signIn, IDLE);
@@ -215,7 +266,7 @@ export function AuthForm({
   initialTab?: AuthTab;
   /** Already sanitized with `safeNext`. */
   next?: string;
-  /** `?error=` code set by /auth/confirm. */
+  /** `?error=` code set by /auth/confirm or /auth/callback. */
   errorCode?: string;
 }) {
   const router = useRouter();
@@ -230,38 +281,40 @@ export function AuthForm({
 
   return (
     <AuthCard>
-        <div className="auth-tabs">
-          <button
-            type="button"
-            className={tab === "in" ? "on" : ""}
-            onClick={() => setTab("in")}
-          >
-            SIGN IN
-          </button>
-          <button
-            type="button"
-            className={tab === "up" ? "on" : ""}
-            onClick={() => setTab("up")}
-          >
-            CREATE ACCOUNT
-          </button>
-        </div>
-
-        {notice && <FormError message={notice} />}
-
-        {tab === "in" ? <SignInForm next={next} /> : <SignUpForm />}
-
+      <div className="auth-tabs">
         <button
           type="button"
-          className="btn ghost mt-2.5 w-full"
-          onClick={playAsGuest}
+          className={tab === "in" ? "on" : ""}
+          onClick={() => setTab("in")}
         >
-          PLAY AS GUEST
+          SIGN IN
         </button>
+        <button
+          type="button"
+          className={tab === "up" ? "on" : ""}
+          onClick={() => setTab("up")}
+        >
+          CREATE ACCOUNT
+        </button>
+      </div>
 
-        <div className="mt-4.5 text-center text-[11px] tracking-widest text-ink-faint">
-          BY ENTERING YOU ACCEPT THE ARCADE HALL TERMS
-        </div>
+      {notice && <FormError message={notice} />}
+
+      {tab === "in" ? <SignInForm next={next} /> : <SignUpForm />}
+
+      <OAuthButtons next={next} />
+
+      <button
+        type="button"
+        className="btn ghost mt-2.5 w-full"
+        onClick={playAsGuest}
+      >
+        PLAY AS GUEST
+      </button>
+
+      <div className="mt-4.5 text-center text-[11px] tracking-widest text-ink-faint">
+        BY ENTERING YOU ACCEPT THE ARCADE HALL TERMS
+      </div>
     </AuthCard>
   );
 }
