@@ -1,6 +1,6 @@
 # SPEC 14 — OAuth and username onboarding
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 13
 > **Date:** 2026-11-11
 > **Objective:** Add Google and GitHub sign-in and a mandatory `/onboarding` step where OAuth players choose their unique username before they can save scores.
@@ -63,14 +63,14 @@ A unique violation on `profiles.username` surfaces as "username taken" in the ac
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors.
-- [ ] GOOGLE and GITHUB buttons start the provider flow and return to `/auth/callback`.
-- [ ] A first-time OAuth user ends up in `/onboarding`; an existing user with a username goes straight to `next` or `/`.
-- [ ] `/onboarding` rejects invalid or taken usernames with a visible message and accepts a valid one, then redirects to `next` or `/`.
-- [ ] `set_username` cannot change an existing username and cannot be called as `anon`.
-- [ ] Without a username, Nav shows `CHOOSE NAME` and SAVE SCORE is replaced by a link to `/onboarding`; `saveScore` refuses.
-- [ ] An unsafe `next` (`//evil.com`, absolute URLs) falls back to `/` in callback and onboarding.
-- [ ] A failed or cancelled OAuth attempt shows an error on `/login` and creates no session.
+- [x] `npm run lint` and `npm run build` finish with no errors.
+- [x] GOOGLE and GITHUB buttons start the provider flow and return to `/auth/callback`.
+- [x] A first-time OAuth user ends up in `/onboarding`; an existing user with a username goes straight to `next` or `/`.
+- [x] `/onboarding` rejects invalid or taken usernames with a visible message and accepts a valid one, then redirects to `next` or `/`.
+- [x] `set_username` cannot change an existing username and cannot be called as `anon`.
+- [x] Without a username, Nav shows `CHOOSE NAME` and SAVE SCORE is replaced by a link to `/onboarding`; `saveScore` refuses.
+- [x] An unsafe `next` (`//evil.com`, absolute URLs) falls back to `/` in callback and onboarding.
+- [x] A failed or cancelled OAuth attempt shows an error on `/login` and creates no session.
 
 ## Decisions taken and discarded
 
