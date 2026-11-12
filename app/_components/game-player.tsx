@@ -155,6 +155,22 @@ function PlayableGame({
     setOver(true);
   }, []);
 
+  // Runs every time a fresh engine exists: on first load and whenever the
+  // route is shown again (Cache Components keeps this component's state while
+  // the engine is destroyed). A new engine means a new run, so drop any
+  // leftover GAME OVER / pause / save state from the previous one.
+  const handleEngineReady = useCallback(
+    (available: readonly SkinId[]) => {
+      setSkins(available);
+      setSnapshot(definition.initialSnapshot);
+      setPaused(false);
+      setOver(false);
+      runRef.current += 1;
+      setSave((prev) => (prev.status === "idle" ? prev : { status: "idle" }));
+    },
+    [definition.initialSnapshot],
+  );
+
   const end = () => {
     setPaused(false);
     engineRef.current?.end(); // reports through onGameOver
@@ -268,7 +284,7 @@ function PlayableGame({
             load={definition.load}
             ariaLabel={definition.ariaLabel}
             skin={skin}
-            onSkins={setSkins}
+            onSkins={handleEngineReady}
             onChange={handleChange}
             onGameOver={handleGameOver}
           />
@@ -324,7 +340,11 @@ function PlayableGame({
               </>
             ) : (
               <>
-                {user ? (
+                {score === 0 ? (
+                  <p className="mono m-0 text-[11px] tracking-[0.06em] text-ink-faint">
+                    A score of 0 is not saved.
+                  </p>
+                ) : user ? (
                   <div className="input-row">
                     <button
                       type="button"

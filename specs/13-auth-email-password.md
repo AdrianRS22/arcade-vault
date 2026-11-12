@@ -1,6 +1,6 @@
 # SPEC 13 — Auth with email and password
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 05, SPEC 07
 > **Date:** 2026-11-11
 > **Objective:** Replace the mock session with Supabase Auth (email + password, email confirmation, password reset) and make score saving require a signed-in player whose username comes from the `profiles` table.
@@ -39,6 +39,8 @@
 - `app/_components/session-provider.tsx` rewritten: browser client `getUser()` + `onAuthStateChange`, loads `profiles.username`. Exposes `{ user: { id: string; name: string } | null, status: "loading" | "ready", signOut }`. The `signIn(name)` function is removed.
 - Nav (`app/_components/nav.tsx`): signed in shows `USERNAME ▾` opening a menu with SIGN OUT (desktop and mobile panel); guest keeps the Sign In link.
 - `app/_components/game-player.tsx`: the free-name input is removed. Signed in → SAVE SCORE calls `saveScore(gameId, score)`. Guest → GAME OVER shows a `SIGN IN TO SAVE` link to `/login?next=/games/<id>/play`; that run's score is not kept.
+  - A final score of 0 is never offered for saving: GAME OVER shows "A score of 0 is not saved." instead of SAVE SCORE / SIGN IN TO SAVE (UI only; `submit_score` still accepts 0).
+  - Every new engine starts a clean run: `GamePlayer` resets score, pause, GAME OVER and save state in the callback that runs when the engine is created. Cache Components keeps the component's state when the route is shown again (for example after returning from `/login`) while the engine is destroyed, which left a stale GAME OVER with score 0.
 - `saveScore(gameId, score)` and `getMyBests()` lose the `player` argument: the server resolves the user and username from the session (`await createClient()`).
 - `CLAUDE.md` updated (Session, Supabase schema, routes, Auth notes).
 - UI built with the `/frontend-design` skill, reusing `.auth-card`, `.field`, `.btn` from `app/globals.css`.
@@ -90,20 +92,21 @@ create index scores_user_idx on public.scores (user_id);
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors; `types/supabase.ts` is regenerated, not hand-edited.
-- [ ] Creating an account creates a row in `auth.users` and one in `profiles` with the uppercased username.
-- [ ] A username already taken, or not matching `^[A-Z0-9_]{1,10}$`, is rejected with a visible message.
-- [ ] A password under 8 characters is rejected in the form and by the server action.
-- [ ] Signing in before confirming the email shows a "confirm your email" message and creates no session.
-- [ ] The confirmation link signs the user in and lands on `next` (or `/`).
-- [ ] The session survives a page reload; SIGN OUT clears it and the Nav returns to Sign In.
-- [ ] `/login` redirects a signed-in user away; `?next=//evil.com` and `?next=https://evil.com` fall back to `/`.
-- [ ] `/forgot-password` shows the same response for existing and unknown emails; the reset link opens `/reset-password`, and the new password works at login. Opening `/reset-password` without a recovery session redirects to `/forgot-password`.
-- [ ] A guest at GAME OVER sees SIGN IN TO SAVE (no name input); calling `submit_score` as `anon` returns a permission error.
-- [ ] A signed-in player's SAVE SCORE stores a row with `user_id` and `player` equal to their username, and shows `SAVED — RANK #N`.
-- [ ] Hall of Fame "YOUR BEST" shows the signed-in player's real best without any client-supplied name.
-- [ ] After the migration, `scores` is empty and every `games.plays` is 0.
-- [ ] No secret or service-role key appears in code or env files.
+- [x] `npm run lint` and `npm run build` finish with no errors; `types/supabase.ts` is regenerated, not hand-edited.
+- [x] Creating an account creates a row in `auth.users` and one in `profiles` with the uppercased username.
+- [x] A username already taken, or not matching `^[A-Z0-9_]{1,10}$`, is rejected with a visible message.
+- [x] A password under 8 characters is rejected in the form and by the server action.
+- [x] Signing in before confirming the email shows a "confirm your email" message and creates no session.
+- [x] The confirmation link signs the user in and lands on `next` (or `/`).
+- [x] The session survives a page reload; SIGN OUT clears it and the Nav returns to Sign In.
+- [x] `/login` redirects a signed-in user away; `?next=//evil.com` and `?next=https://evil.com` fall back to `/`.
+- [x] `/forgot-password` shows the same response for existing and unknown emails; the reset link opens `/reset-password`, and the new password works at login. Opening `/reset-password` without a recovery session redirects to `/forgot-password`.
+- [x] A guest at GAME OVER sees SIGN IN TO SAVE (no name input); calling `submit_score` as `anon` returns a permission error.
+- [x] A guest who reaches `/login` from GAME OVER and comes back lands on a fresh run (HUD score 0, no GAME OVER modal). A final score of 0 shows "A score of 0 is not saved." and no save button.
+- [x] A signed-in player's SAVE SCORE stores a row with `user_id` and `player` equal to their username, and shows `SAVED — RANK #N`.
+- [x] Hall of Fame "YOUR BEST" shows the signed-in player's real best without any client-supplied name.
+- [x] After the migration, `scores` is empty and every `games.plays` is 0.
+- [x] No secret or service-role key appears in code or env files.
 
 ## Decisions taken and discarded
 
@@ -111,6 +114,7 @@ create index scores_user_idx on public.scores (user_id);
 - **Login with email; username in `profiles`.** Simple and does not expose which usernames exist. Discarded: login by username (needs a resolver RPC), `user_metadata` (no uniqueness).
 - **Only signed-in players save scores; guests can play.** Ends name spoofing while keeping the low-friction play. Discarded: free names for guests; mandatory login to play.
 - **Guest score is not kept after login.** Saving it in the browser to replay later would let anyone forge scores. Discarded: pending score in `sessionStorage`.
+- **A score of 0 is not saved.** Found during implementation: a 0 offered a pointless SAVE SCORE, and a stale GAME OVER appeared after returning from login. Hidden in the UI only; the database rule (`0..9,999,999`) is unchanged. Discarded: rejecting 0 in `submit_score` and `saveScore`.
 - **Delete existing scores.** They carry free-form names with no owner; clean rankings beat a legacy mix. Discarded: keep them with `user_id null`.
 - **Email confirmation on, SMTP via Resend.** Avoids fake accounts and the very low default SMTP limit. Discarded: no confirmation; default SMTP.
 - **Minimum password 8 characters.** Discarded: Supabase default of 6.
