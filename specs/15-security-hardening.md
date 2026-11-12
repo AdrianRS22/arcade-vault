@@ -1,6 +1,6 @@
 # SPEC 15 — Security hardening
 
-> **Status:** Approved
+> **Status:** Implemented
 > **Depends on:** SPEC 13, SPEC 14
 > **Date:** 2026-11-11
 > **Objective:** Close the basic security checklist (`references/security-checklist.md`): security headers in Next.js, no API access to `rls_auto_enable()`, password rules aligned with the Supabase dashboard, route protection in `proxy.ts` for the private routes, verified RLS and Auth settings, and the remaining linter warnings either fixed or documented as accepted.
@@ -84,23 +84,23 @@ end $$;
 
 ## Acceptance criteria
 
-- [ ] `npm run lint` and `npm run build` finish with no errors; `types/supabase.ts` is regenerated, not hand-edited.
-- [ ] Every response from the production server (`npm start`) includes `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, the `Permissions-Policy` above and `Strict-Transport-Security: max-age=63072000; includeSubDomains`.
-- [ ] The dev server does not send `Strict-Transport-Security`.
-- [ ] Home, game play, login (email and OAuth redirect start), onboarding and SAVE SCORE still work with the headers on, at 375×812 and 1440×900.
-- [ ] A guest requesting `/onboarding` is redirected by `proxy.ts` to `/login?next=/onboarding`, and `/reset-password` to `/forgot-password`, before any page code runs (checked with `curl -i`, no `Set-Cookie` lost).
-- [ ] A signed-in user opens `/onboarding` and `/reset-password` normally; the email confirm link (recovery) and the OAuth callback still land on them with the new session.
-- [ ] Public routes (`/`, `/games`, `/games/[id]/play`, `/hall-of-fame`, `/about`, `/login`, `/forgot-password`, `/auth/*`, `/api/health`) stay reachable as a guest.
-- [ ] A session refreshed in the proxy keeps working after a redirect (refreshed cookies are present on the redirect response).
-- [ ] The per-page checks still reject a guest if the proxy is bypassed (page and Server Action).
-- [ ] `anon` and `authenticated` cannot execute `public.rls_auto_enable()`; the security advisor no longer reports it.
-- [ ] RLS is enabled on `games`, `scores` and `profiles`.
-- [ ] The only remaining security advisor warnings are the three documented SECURITY DEFINER RPCs and leaked password protection.
-- [ ] Supabase Auth rejects passwords shorter than 8 characters or missing a lowercase letter, uppercase letter, digit or symbol, and the sign-up/sign-in rate limit is 10 per 5 minutes per IP.
-- [ ] Sign-up and `/reset-password` reject a password without a symbol (e.g. `Password1`) with a message listing the requirements, both in the form and in the Server Action; `Password1!` is accepted.
-- [ ] A `weak_password` error from Supabase shows the full requirements message, not only the length rule.
-- [ ] Existing users sign in with their current password unchanged.
-- [ ] `CLAUDE.md` lists the headers, the accepted warnings with their reason and the dashboard settings.
+- [x] `npm run lint` and `npm run build` finish with no errors; `types/supabase.ts` is regenerated, not hand-edited.
+- [x] Every response from the production server (`npm start`) includes `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin`, the `Permissions-Policy` above and `Strict-Transport-Security: max-age=63072000; includeSubDomains`.
+- [x] The dev server does not send `Strict-Transport-Security`.
+- [x] Home, game play, login (email and OAuth redirect start), onboarding and SAVE SCORE still work with the headers on, at 375×812 and 1440×900.
+- [x] A guest requesting `/onboarding` is redirected by `proxy.ts` to `/login?next=/onboarding`, and `/reset-password` to `/forgot-password`, before any page code runs (checked with `curl -i`, no `Set-Cookie` lost).
+- [x] A signed-in user opens `/onboarding` and `/reset-password` normally; the email confirm link (recovery) and the OAuth callback still land on them with the new session.
+- [x] Public routes (`/`, `/games`, `/games/[id]/play`, `/hall-of-fame`, `/about`, `/login`, `/forgot-password`, `/auth/*`, `/api/health`) stay reachable as a guest.
+- [x] A session refreshed in the proxy keeps working after a redirect (refreshed cookies are present on the redirect response).
+- [x] The per-page checks still reject a guest if the proxy is bypassed (page and Server Action).
+- [x] `anon` and `authenticated` cannot execute `public.rls_auto_enable()`; the security advisor no longer reports it.
+- [x] RLS is enabled on `games`, `scores` and `profiles`.
+- [x] The only remaining security advisor warnings are the three documented SECURITY DEFINER RPCs and leaked password protection.
+- [x] Supabase Auth rejects passwords shorter than 8 characters or missing a lowercase letter, uppercase letter, digit or symbol, and the sign-up/sign-in rate limit is 10 per 5 minutes per IP.
+- [x] Sign-up and `/reset-password` reject a password without a symbol (e.g. `Password1`) with a message listing the requirements, both in the form and in the Server Action; `Password1!` is accepted.
+- [x] A `weak_password` error from Supabase shows the full requirements message, not only the length rule.
+- [x] Existing users sign in with their current password unchanged.
+- [x] `CLAUDE.md` lists the headers, the accepted warnings with their reason and the dashboard settings.
 
 ## Decisions taken and discarded
 
