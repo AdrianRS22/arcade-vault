@@ -78,6 +78,24 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          username: string | null
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          username?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       scores: {
         Row: {
           created_at: string
@@ -85,6 +103,7 @@ export type Database = {
           id: number
           player: string
           score: number
+          user_id: string
         }
         Insert: {
           created_at?: string
@@ -92,6 +111,7 @@ export type Database = {
           id?: never
           player: string
           score: number
+          user_id: string
         }
         Update: {
           created_at?: string
@@ -99,6 +119,7 @@ export type Database = {
           id?: never
           player?: string
           score?: number
+          user_id?: string
         }
         Relationships: [
           {
@@ -170,9 +191,10 @@ export type Database = {
     }
     Functions: {
       submit_score: {
-        Args: { p_game_id: string; p_player: string; p_score: number }
+        Args: { p_game_id: string; p_score: number }
         Returns: number
       }
+      username_available: { Args: { p: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
