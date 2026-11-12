@@ -163,3 +163,84 @@ export async function signOut(): Promise<void> {
   await supabase.auth.signOut();
   redirect("/");
 }
+
+export async function requestPasswordReset(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const email = readField(formData, "email").trim();
+  const values = { username: "", email };
+
+  const emailError = validateEmail(email);
+  if (emailError) {
+    return { status: "error", message: emailError, field: "email", values };
+  }
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+  // Anything but a rate limit looks the same to the caller, so the response
+  // never reveals whether the email has an account.
+  if (error && isRateLimited(error)) {
+    return { status: "error", message: RATE_LIMITED, values };
+  }
+
+  return { status: "sent", email };
+}
+
+export async function updatePassword(
+  _prev: AuthFormState,
+  formData: FormData,
+): Promise<AuthFormState> {
+  const password = readField(formData, "password");
+  const confirm = readField(formData, "confirm");
+  const values = { username: "", email: "" };
+
+  const passwordError = validatePassword(password);
+  if (passwordError) {
+    return {
+      status: "error",
+      message: passwordError,
+      field: "password",
+      values,
+    };
+  }
+  if (password !== confirm) {
+    return {
+      status: "error",
+      message: "Passwords do not match.",
+      field: "confirm",
+      values,
+    };
+  }
+
+  const supabase = await createClient();
+  const { data } = await supabase.auth.getUser();
+  if (!data.user) redirect("/forgot-password");
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    if (error.code === "same_password") {
+      return {
+        status: "error",
+        message: "Choose a password you have not used before.",
+        field: "password",
+        values,
+      };
+    }
+    if (error.code === "weak_password") {
+      return {
+        status: "error",
+        message: validatePassword("") ?? GENERIC,
+        field: "password",
+        values,
+      };
+    }
+    if (isRateLimited(error)) {
+      return { status: "error", message: RATE_LIMITED, values };
+    }
+    return { status: "error", message: GENERIC, values };
+  }
+
+  redirect("/");
+}
