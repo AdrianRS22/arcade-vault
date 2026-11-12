@@ -11,7 +11,9 @@ import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "./env";
  * Server Components cannot write cookies, so an expired access token is
  * renewed here, before rendering: the refreshed cookies are written to both
  * the request (so the render sees them) and the response (so the browser
- * stores them). It does not protect routes; it only keeps the session alive.
+ * stores them). It does not decide access: it returns the response plus the
+ * user id from the validated claims (null for guests) so `proxy.ts` can apply
+ * the route protection map without a second Supabase call.
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -43,7 +45,8 @@ export async function updateSession(request: NextRequest) {
   );
 
   // Validates the JWT and triggers the refresh when it is about to expire.
-  await supabase.auth.getClaims();
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims?.sub ? { id: data.claims.sub } : null;
 
-  return response;
+  return { response, user };
 }

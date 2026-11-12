@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import {
   normalizeUsername,
+  PASSWORD_REQUIREMENTS,
   safeNext,
   validateEmail,
   validatePassword,
@@ -90,7 +91,7 @@ export async function signUp(
     if (error.code === "weak_password") {
       return {
         status: "error",
-        message: validatePassword("") ?? GENERIC,
+        message: PASSWORD_REQUIREMENTS,
         field: "password",
         values,
       };
@@ -231,7 +232,7 @@ export async function updatePassword(
     if (error.code === "weak_password") {
       return {
         status: "error",
-        message: validatePassword("") ?? GENERIC,
+        message: PASSWORD_REQUIREMENTS,
         field: "password",
         values,
       };

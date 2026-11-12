@@ -4,7 +4,10 @@ import { useActionState } from "react";
 
 import { updatePassword } from "@/app/login/actions";
 import type { AuthFormState } from "@/app/login/auth-state";
-import { MIN_PASSWORD_LENGTH } from "@/lib/auth/validation";
+import {
+  MIN_PASSWORD_LENGTH,
+  PASSWORD_REQUIREMENTS,
+} from "@/lib/auth/validation";
 
 import { AuthCard, FieldError, FormError, SubmitButton } from "./auth-ui";
 
@@ -30,9 +33,14 @@ export function ResetPasswordForm() {
             placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
             aria-invalid={fieldError("password") ? true : undefined}
             aria-describedby={
-              fieldError("password") ? "reset-password-error" : undefined
+              fieldError("password")
+                ? "reset-password-error"
+                : "reset-password-hint"
             }
           />
+          <p id="reset-password-hint" className="field-hint">
+            {PASSWORD_REQUIREMENTS}
+          </p>
           <FieldError
             id="reset-password-error"
             message={fieldError("password")}
