@@ -1,41 +1,235 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useActionState, useState } from "react";
+
+import { signIn, signUp } from "@/app/login/actions";
+import type { AuthFormState } from "@/app/login/auth-state";
+import {
+  MIN_PASSWORD_LENGTH,
+  normalizeUsername,
+  validateUsername,
+} from "@/lib/auth/validation";
+import { createClient } from "@/lib/supabase/client";
+
+import { AuthCard, FieldError, FormError, SubmitButton } from "./auth-ui";
 import { useSession } from "./session-provider";
 
 export type AuthTab = "in" | "up";
 
-export function AuthForm({ initialTab = "in" }: { initialTab?: AuthTab }) {
-  const router = useRouter();
-  const { signIn, signOut } = useSession();
-  const [tab, setTab] = useState<AuthTab>(initialTab);
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+const IDLE: AuthFormState = { status: "idle" };
 
-  const submit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    signIn(username || "PLAYER1");
-    router.push("/");
-  };
+const NOTICES: Record<string, string> = {
+  invalid_link: "That link is not valid. Request a new one.",
+  link_expired: "That link has expired or was already used. Request a new one.",
+};
+
+function SignInForm({ next }: { next: string }) {
+  const [state, formAction] = useActionState(signIn, IDLE);
+  const error = state.status === "error" ? state : null;
+  const fieldError = (f: string) =>
+    error?.field === f ? error.message : undefined;
+
+  return (
+    <form action={formAction} noValidate>
+      <input type="hidden" name="next" value={next} />
+      <div className="field">
+        <label htmlFor="signin-email">Email</label>
+        <input
+          id="signin-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          defaultValue={error?.values.email ?? ""}
+          placeholder="player@vault.gg"
+          aria-invalid={fieldError("email") ? true : undefined}
+          aria-describedby={
+            fieldError("email") ? "signin-email-error" : undefined
+          }
+        />
+        <FieldError id="signin-email-error" message={fieldError("email")} />
+      </div>
+      <div className="field">
+        <label htmlFor="signin-password">Password</label>
+        <input
+          id="signin-password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          placeholder="••••••••"
+          aria-invalid={fieldError("password") ? true : undefined}
+          aria-describedby={
+            fieldError("password") ? "signin-password-error" : undefined
+          }
+        />
+        <FieldError
+          id="signin-password-error"
+          message={fieldError("password")}
+        />
+      </div>
+
+      <FormError message={error && !error.field ? error.message : undefined} />
+
+      <SubmitButton idle="ENTER THE VAULT" busy="ENTERING…" />
+      <div className="mt-3 text-center">
+        <Link
+          href="/forgot-password"
+          className="text-[11px] tracking-widest text-ink-faint hover:text-cyan"
+        >
+          Forgot password?
+        </Link>
+      </div>
+    </form>
+  );
+}
+
+type UsernameCheck = "idle" | "checking" | "available" | "taken";
+
+function SignUpForm() {
+  const [state, formAction] = useActionState(signUp, IDLE);
+  const error = state.status === "error" ? state : null;
+
+  const [username, setUsername] = useState("");
+  const [seen, setSeen] = useState(state);
+  const [check, setCheck] = useState<UsernameCheck>("idle");
+
+  // Restore the username the server rejected (the field is controlled).
+  if (state !== seen) {
+    setSeen(state);
+    if (state.status === "error") setUsername(state.values.username);
+  }
+
+  const formatError = username ? validateUsername(username) : null;
+
+  async function checkAvailability() {
+    if (!username || validateUsername(username)) return;
+    setCheck("checking");
+    const { data } = await createClient().rpc("username_available", {
+      p: username,
+    });
+    // Ignore a stale answer if the user kept typing.
+    setCheck((prev) =>
+      prev === "checking" ? (data === false ? "taken" : "available") : prev,
+    );
+  }
+
+  const usernameMessage =
+    formatError ??
+    (check === "taken"
+      ? "That username is taken. Pick another one."
+      : undefined) ??
+    (error?.field === "username" ? error.message : undefined);
+  const fieldError = (f: string) =>
+    error?.field === f ? error.message : undefined;
+
+  if (state.status === "sent") {
+    return (
+      <div className="fade-in py-2 text-center" role="status">
+        <div className="pixel neon-cyan mb-3 text-[12px]">CHECK YOUR INBOX</div>
+        <p className="text-[13px] leading-relaxed text-ink-dim">
+          We sent a confirmation link to{" "}
+          <span className="text-ink">{state.email}</span>. Open it to activate
+          your account, then sign in.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <form action={formAction} noValidate>
+      <div className="field">
+        <label htmlFor="signup-username">Username</label>
+        <input
+          id="signup-username"
+          name="username"
+          value={username}
+          onChange={(e) => {
+            setUsername(normalizeUsername(e.target.value).slice(0, 10));
+            setCheck("idle");
+          }}
+          onBlur={checkAvailability}
+          autoComplete="username"
+          autoCapitalize="characters"
+          maxLength={10}
+          placeholder="PX_KAI"
+          aria-invalid={usernameMessage ? true : undefined}
+          aria-describedby={usernameMessage ? "signup-username-msg" : undefined}
+        />
+        {usernameMessage ? (
+          <FieldError id="signup-username-msg" message={usernameMessage} />
+        ) : check === "available" ? (
+          <p className="mono m-0 text-[11px] tracking-[0.06em] text-green">
+            Username available.
+          </p>
+        ) : null}
+      </div>
+      <div className="field">
+        <label htmlFor="signup-email">Email</label>
+        <input
+          id="signup-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          defaultValue={error?.values.email ?? ""}
+          placeholder="player@vault.gg"
+          aria-invalid={fieldError("email") ? true : undefined}
+          aria-describedby={
+            fieldError("email") ? "signup-email-error" : undefined
+          }
+        />
+        <FieldError id="signup-email-error" message={fieldError("email")} />
+      </div>
+      <div className="field">
+        <label htmlFor="signup-password">Password</label>
+        <input
+          id="signup-password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          minLength={MIN_PASSWORD_LENGTH}
+          placeholder={`At least ${MIN_PASSWORD_LENGTH} characters`}
+          aria-invalid={fieldError("password") ? true : undefined}
+          aria-describedby={
+            fieldError("password") ? "signup-password-error" : undefined
+          }
+        />
+        <FieldError
+          id="signup-password-error"
+          message={fieldError("password")}
+        />
+      </div>
+
+      <FormError message={error && !error.field ? error.message : undefined} />
+
+      <SubmitButton idle="CREATE AND PLAY" busy="CREATING…" />
+    </form>
+  );
+}
+
+export function AuthForm({
+  initialTab = "in",
+  next = "/",
+  errorCode,
+}: {
+  initialTab?: AuthTab;
+  /** Already sanitized with `safeNext`. */
+  next?: string;
+  /** `?error=` code set by /auth/confirm. */
+  errorCode?: string;
+}) {
+  const router = useRouter();
+  const { signOut } = useSession();
+  const [tab, setTab] = useState<AuthTab>(initialTab);
+  const notice = errorCode ? NOTICES[errorCode] : undefined;
 
   const playAsGuest = () => {
-    signOut();
+    void signOut();
     router.push("/");
   };
 
   return (
-    <div className="av-auth-wrap fade-in">
-      <div className="auth-card">
-        <div className="auth-header">
-          <div className="mark"></div>
-          <h2 className="neon-cyan">ARCADE VAULT</h2>
-          <div className="mono mt-1.5 text-[11px] tracking-[0.16em] text-ink-faint">
-            SYSTEM ACCESS · v2.6
-          </div>
-        </div>
-
+    <AuthCard>
         <div className="auth-tabs">
           <button
             type="button"
@@ -53,43 +247,9 @@ export function AuthForm({ initialTab = "in" }: { initialTab?: AuthTab }) {
           </button>
         </div>
 
-        <form onSubmit={submit}>
-          <div className="field">
-            <label htmlFor="auth-username">Username</label>
-            <input
-              id="auth-username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="px_kai"
-            />
-          </div>
-          {tab === "up" && (
-            <div className="field slide-in">
-              <label htmlFor="auth-email">Email</label>
-              <input
-                id="auth-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="player@vault.gg"
-              />
-            </div>
-          )}
-          <div className="field">
-            <label htmlFor="auth-password">Password</label>
-            <input
-              id="auth-password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-            />
-          </div>
+        {notice && <FormError message={notice} />}
 
-          <button type="submit" className="btn lg mt-2 w-full">
-            {tab === "in" ? "ENTER THE VAULT" : "CREATE AND PLAY"}
-          </button>
-        </form>
+        {tab === "in" ? <SignInForm next={next} /> : <SignUpForm />}
 
         <button
           type="button"
@@ -99,20 +259,9 @@ export function AuthForm({ initialTab = "in" }: { initialTab?: AuthTab }) {
           PLAY AS GUEST
         </button>
 
-        <div className="auth-divider">OR CONTINUE WITH</div>
-        <div className="social">
-          <button type="button" className="btn ghost">
-            ◆ GOOGLE
-          </button>
-          <button type="button" className="btn ghost">
-            ▣ GITHUB
-          </button>
-        </div>
-
         <div className="mt-4.5 text-center text-[11px] tracking-widest text-ink-faint">
           BY ENTERING YOU ACCEPT THE ARCADE HALL TERMS
         </div>
-      </div>
-    </div>
+    </AuthCard>
   );
 }

@@ -2,13 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSession } from "./session-provider";
 
 export function Nav() {
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const { user, signOut } = useSession();
+
+  // Close the user menu on outside click or Escape.
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onPointer = (e: PointerEvent) => {
+      if (!menuRef.current?.contains(e.target as Node)) setMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [menuOpen]);
 
   const homeActive = pathname === "/";
   const libraryActive = pathname.startsWith("/games");
@@ -17,6 +36,12 @@ export function Nav() {
   const loginActive = pathname.startsWith("/login");
 
   const close = () => setOpen(false);
+
+  const handleSignOut = async () => {
+    setMenuOpen(false);
+    close();
+    await signOut();
+  };
 
   return (
     <>
@@ -47,9 +72,24 @@ export function Nav() {
           <span>CREDITS · 03</span>
         </div>
         {user ? (
-          <button type="button" className="btn ghost auth-btn" onClick={signOut}>
-            {user.name} ▾
-          </button>
+          <div className="user-menu" ref={menuRef}>
+            <button
+              type="button"
+              className="btn ghost auth-btn"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((v) => !v)}
+            >
+              {user.name} ▾
+            </button>
+            {menuOpen && (
+              <div className="user-menu-list" role="menu">
+                <button type="button" role="menuitem" onClick={handleSignOut}>
+                  SIGN OUT
+                </button>
+              </div>
+            )}
+          </div>
         ) : (
           <Link href="/login" className="btn auth-btn">
             Sign In
@@ -95,7 +135,18 @@ export function Nav() {
         >
           About
         </Link>
-        {!user && (
+        {user ? (
+          <>
+            <div className="mobile-user pixel neon-cyan">{user.name}</div>
+            <button
+              type="button"
+              className="mobile-signout"
+              onClick={handleSignOut}
+            >
+              SIGN OUT
+            </button>
+          </>
+        ) : (
           <Link
             href="/login"
             className={loginActive ? "active" : ""}

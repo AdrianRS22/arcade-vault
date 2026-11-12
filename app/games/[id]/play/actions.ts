@@ -4,8 +4,7 @@ import { updateTag } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
 
-// Same rules as the database: public.scores checks and public.submit_score.
-const PLAYER_PATTERN = /^[A-Z0-9_]{1,10}$/;
+// Same rule as the database: public.scores check and public.submit_score.
 const MAX_SCORE = 9_999_999;
 
 export type SaveScoreResult =
@@ -15,25 +14,15 @@ export type SaveScoreResult =
  * Saves a finished run through the `submit_score` Postgres function, the only
  * write path to `scores`. Returns the player's new rank for that game.
  *
- * There is no Auth yet, so the name is whatever the player typed: it is
- * normalized and validated here, and validated again by the database.
+ * The player is never sent by the client: the database reads the signed-in
+ * user from the session cookie and takes the username from `profiles`.
  */
 export async function saveScore(
   gameId: string,
-  player: string,
   score: number,
 ): Promise<SaveScoreResult> {
-  const name =
-    typeof player === "string" ? player.trim().toUpperCase().slice(0, 10) : "";
-
   if (typeof gameId !== "string" || gameId === "") {
     return { ok: false, error: "This game cannot save scores." };
-  }
-  if (!PLAYER_PATTERN.test(name)) {
-    return {
-      ok: false,
-      error: "Use 1 to 10 letters, numbers or underscores for your initials.",
-    };
   }
   if (!Number.isInteger(score) || score < 0 || score > MAX_SCORE) {
     return { ok: false, error: "This score cannot be saved." };
@@ -43,10 +32,16 @@ export async function saveScore(
     const supabase = await createClient();
     const { data, error } = await supabase.rpc("submit_score", {
       p_game_id: gameId,
-      p_player: name,
       p_score: score,
     });
 
+    // 28000: no session. 22023 + "username": profile without a username.
+    if (error?.code === "28000" || error?.code === "42501") {
+      return { ok: false, error: "Sign in to save your score." };
+    }
+    if (error?.code === "22023" && /username/.test(error.message)) {
+      return { ok: false, error: "Choose a username before saving scores." };
+    }
     if (error || data === null) {
       console.error(
         "[saveScore] submit_score failed:",

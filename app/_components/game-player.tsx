@@ -86,7 +86,7 @@ function PlayableGame({
   game,
   definition,
 }: PlayerProps & { definition: AnyGameDefinition }) {
-  const { user } = useSession();
+  const { user, status } = useSession();
   const engineRef = useRef<GameHandle>(null);
   // Bumped on every restart so a save that finishes late is ignored.
   const runRef = useRef(0);
@@ -97,7 +97,6 @@ function PlayableGame({
   const score = snapshot.score;
   const [paused, setPaused] = useState(false);
   const [over, setOver] = useState(false);
-  const [name, setName] = useState(user ? user.name : "GUEST");
   const [save, setSave] = useState<SaveState>({ status: "idle" });
   // Server snapshot is muted, so the first client render matches the HTML.
   const muted = useSyncExternalStore(subscribe, isMuted, () => true);
@@ -156,6 +155,22 @@ function PlayableGame({
     setOver(true);
   }, []);
 
+  // Runs every time a fresh engine exists: on first load and whenever the
+  // route is shown again (Cache Components keeps this component's state while
+  // the engine is destroyed). A new engine means a new run, so drop any
+  // leftover GAME OVER / pause / save state from the previous one.
+  const handleEngineReady = useCallback(
+    (available: readonly SkinId[]) => {
+      setSkins(available);
+      setSnapshot(definition.initialSnapshot);
+      setPaused(false);
+      setOver(false);
+      runRef.current += 1;
+      setSave((prev) => (prev.status === "idle" ? prev : { status: "idle" }));
+    },
+    [definition.initialSnapshot],
+  );
+
   const end = () => {
     setPaused(false);
     engineRef.current?.end(); // reports through onGameOver
@@ -177,7 +192,7 @@ function PlayableGame({
     setSave({ status: "saving" });
     let next: SaveState;
     try {
-      const result = await saveScore(game.id, name, score);
+      const result = await saveScore(game.id, score);
       next = result.ok
         ? { status: "saved", rank: result.rank }
         : { status: "error", message: result.error };
@@ -202,7 +217,7 @@ function PlayableGame({
         <div className="flex flex-wrap gap-6">
           <div className="hud-stat">
             <div className="l">Player</div>
-            <div className="v text-ink">{name}</div>
+            <div className="v text-ink">{user ? user.name : "GUEST"}</div>
           </div>
           <div className="hud-stat">
             <div className="l">Score</div>
@@ -269,7 +284,7 @@ function PlayableGame({
             load={definition.load}
             ariaLabel={definition.ariaLabel}
             skin={skin}
-            onSkins={setSkins}
+            onSkins={handleEngineReady}
             onChange={handleChange}
             onGameOver={handleGameOver}
           />
@@ -325,25 +340,29 @@ function PlayableGame({
               </>
             ) : (
               <>
-                <div className="input-row">
-                  <input
-                    value={name}
-                    onChange={(e) =>
-                      setName(e.target.value.toUpperCase().slice(0, 10))
-                    }
-                    placeholder="YOUR INITIALS"
-                    aria-label="Your initials"
-                    disabled={save.status === "saving"}
-                  />
-                  <button
-                    type="button"
-                    className="btn yellow"
-                    onClick={handleSave}
-                    disabled={save.status === "saving"}
+                {score === 0 ? (
+                  <p className="mono m-0 text-[11px] tracking-[0.06em] text-ink-faint">
+                    A score of 0 is not saved.
+                  </p>
+                ) : user ? (
+                  <div className="input-row">
+                    <button
+                      type="button"
+                      className="btn yellow w-full"
+                      onClick={handleSave}
+                      disabled={save.status === "saving"}
+                    >
+                      {save.status === "saving" ? "SAVING…" : "SAVE SCORE"}
+                    </button>
+                  </div>
+                ) : status === "ready" ? (
+                  <Link
+                    href={`/login?next=/games/${game.id}/play`}
+                    className="btn yellow w-full"
                   >
-                    {save.status === "saving" ? "SAVING…" : "SAVE SCORE"}
-                  </button>
-                </div>
+                    SIGN IN TO SAVE
+                  </Link>
+                ) : null}
                 {save.status === "error" && (
                   <p className="save-error" role="alert">
                     {save.message}
