@@ -1,6 +1,6 @@
 # SPEC 16 — Auth and score hardening
 
-> **Status:** Draft
+> **Status:** Approved
 > **Depends on:** SPEC 13, SPEC 14, SPEC 15
 > **Date:** 2026-11-12
 > **Objective:** Close the findings of the `security-guidance` review of authentication: password changes only from a fresh recovery session that revokes the other sessions, a database throttle on `submit_score`, a validated username in `handle_new_user`, and an honest "username taken" error in `signUp`.
