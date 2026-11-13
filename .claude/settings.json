@@ -14,6 +14,18 @@
       }
     ]
   },
+  "permissions": {
+    "deny": [
+      "Bash(*supabase link*)",
+      "Bash(*supabase config push*)",
+      "Bash(*--db-url*)",
+      "PowerShell(*supabase link*)",
+      "PowerShell(*supabase config push*)",
+      "PowerShell(*--db-url*)",
+      "Read(.env.production*)",
+      "Read(**/.env.production*)"
+    ]
+  },
   "enabledPlugins": {
     "security-guidance@anthropic-plugin-directory": true
   }
