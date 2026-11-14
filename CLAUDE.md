@@ -76,6 +76,8 @@ Project subagents live in `.claude/agents/` (tools, write scope and rules are in
 
 ## Supabase
 
+- Two projects: Dev (`ekupeshkawfihlnpmpvi`, the only one Claude Code can reach through MCP/CLI) and Production (owned by the user; Claude has **no access** and must never ask for its ref, password or keys). Never run `supabase link`, `config push` or `db push --db-url`. The user deploys to Prod with `docs/production-runbook.md` and checks it with `supabase/checks/verify-prod.sql`; keep that check's expected migration list in sync when adding migrations.
+- **Migrations only:** every change to the Dev database (schema, policies, grants, functions, seeds) must be made through a file in `supabase/migrations/`, never with ad-hoc SQL (`execute_sql` is for read-only queries), so the same migrations can be replayed in Production. Apply it with `npm run db:push`, then run `npm run db:types` if the schema changed and update the expected migration list in `supabase/checks/verify-prod.sql`.
 - Clients (typed with `Database` from `types/supabase.ts`, which is generated: never edit by hand):
   - `lib/supabase/server.ts` — `await createClient()` for Server Components, Server Actions and Route Handlers (dynamic contexts only, not inside `"use cache"`).
   - `lib/supabase/client.ts` — `createClient()` for Client Components.
